@@ -1,0 +1,17 @@
+
+
+master-server:
+    build: .
+    ports:
+     - "6960:6960"
+    volumes:
+     - ./../..:/usr/src/app
+    links:
+        - cache
+        - db
+
+cache:
+  image: redis
+
+db:
+  image: postgres

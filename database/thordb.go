@@ -59,7 +59,7 @@ func init() {
 
 	log.Print("testing postgres connection")
 	// check postgres
-	db, err = sql.Open("postgres", "user=thoriumnet password=thoriumtest dbname=thoriumnet host=localhost")
+	db, err = sql.Open("postgres", "user=thoriumnet password=thoriumtest dbname=thoriumnet host=db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,7 +67,7 @@ func init() {
 	log.Print("testing redis connection")
 	// check redis
 	kvstore = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     "cache:6379",
 		Password: "",
 		DB:       0,
 	})
@@ -442,14 +442,14 @@ func CreateCharacter(userToken string, character *CharacterData) (*CharacterSess
 		log.Print("thordb: no tutorial games found")
 
 		var game_id int
-		err = db.QueryRow("INSERT INTO games (map_name, game_mode) VALUES ('tutorial', 'tutorial') RETURNING game_id").Scan(&game_id)
+		err = db.QueryRow("INSERT INTO games (map_name, game_mode) VALUES ('Mode_Sandbox', 'tutorial') RETURNING game_id").Scan(&game_id)
 		if err != nil {
 			return nil, err
 		}
 
 		// todo
 		// provision new game on an available machine here
-		err = ProvisionNewGame(game_id, "tutorial", "tutorial")
+		err = ProvisionNewGame(game_id, "Mode_Sandbox", "tutorial")
 		if err != nil {
 			return nil, err
 		}
@@ -519,14 +519,14 @@ func SelectCharacter(userToken string, id int) (*CharacterSession, error) {
 			log.Print("thordb: no tutorial games found")
 
 			var game_id int
-			err = db.QueryRow("INSERT INTO games (map_name, game_mode) VALUES ('tutorial', 'tutorial') RETURNING game_id").Scan(&game_id)
+			err = db.QueryRow("INSERT INTO games (map_name, game_mode) VALUES ('Mode_Sandbox', 'tutorial') RETURNING game_id").Scan(&game_id)
 			if err != nil {
 				return nil, err
 			}
 
 			// todo
 			// provision new game on an available machine here
-			err = ProvisionNewGame(game_id, "tutorial", "tutorial")
+			err = ProvisionNewGame(game_id, "Mode_Sandbox", "tutorial")
 			if err != nil {
 				return nil, err
 			}
