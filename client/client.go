@@ -52,7 +52,8 @@ func Register(masterEndpoint string, username string, password string) (int, str
 	}
 
 	// create the http request struct
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/clients/register", address, port), bytes.NewBuffer(jsonBytes))
+	url := fmt.Sprintf("http://%s/clients/register", masterEndpoint)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		log.Print("error with request: ", err)
 		return 0, "", err
@@ -92,7 +93,8 @@ func Login(masterEndpoint string, username string, password string) (int, string
 	}
 
 	// create the http request struct
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/clients/login", address, port), bytes.NewBuffer(jsonBytes))
+	url := fmt.Sprintf("http://%s/clients/login", masterEndpoint)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		log.Print("error with request: ", err)
 		return 0, "", err
