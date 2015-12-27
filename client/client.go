@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,27 +14,28 @@ import "io/ioutil"
 var address string = "52.25.124.72"
 var port int = 6960
 
-func PingMaster() (bool, error) {
+func GetStatus(masterEndpoint string) (int, string, error) {
 
-	endpoint := fmt.Sprintf("http://%s:%d/status", address, port)
-	req, err := http.NewRequest("GET", endpoint, bytes.NewBuffer([]byte("")))
+	url := fmt.Sprintf("http://%s/status", masterEndpoint)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
-		return false, err
+		return 0, "", err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	c := &http.Client{}
+	resp, err := c.Do(req)
 	if err != nil {
 		log.Print("ping master - error:\n", err)
-		return false, err
+		return 0, "", err
 	}
+
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return false, errors.New("http status error")
-	} else {
-		return true, nil
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
 	}
+
+	return resp.StatusCode, string(bodyBytes), nil
 }
 
 func LoginRequest(username string, password string) (string, error) {
