@@ -38,32 +38,84 @@ func GetStatus(masterEndpoint string) (int, string, error) {
 	return resp.StatusCode, string(bodyBytes), nil
 }
 
-func LoginRequest(username string, password string) (string, error) {
+func Register(masterEndpoint string, username string, password string) (int, string, error) {
+
+	// create request data struct in memory
 	var loginReq request.Authentication
 	loginReq.Username = username
 	loginReq.Password = password
+
+	// marshal request data into json byte array
 	jsonBytes, err := json.Marshal(&loginReq)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/clients/login", address, port), bytes.NewBuffer(jsonBytes))
+	// create the http request struct
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/clients/register", address, port), bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		log.Print("error with request: ", err)
-		return "err", err
+		return 0, "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	// create the http client struct and execute the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Print("error with sending request", err)
-		return "err", err
+		return 0, "", err
 	}
+
+	// read the body into a byte array and return the results
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	tokenString := bytes.NewBuffer(body).String()
-	log.Print("account token:\n", tokenString)
-	return tokenString, nil
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
+	}
+
+	return resp.StatusCode, string(body), nil
+}
+
+func Login(masterEndpoint string, username string, password string) (int, string, error) {
+
+	// create request data struct in memory
+	var loginReq request.Authentication
+	loginReq.Username = username
+	loginReq.Password = password
+
+	// marshal request data into json byte array
+	jsonBytes, err := json.Marshal(&loginReq)
+	if err != nil {
+		return 0, "", err
+	}
+
+	// create the http request struct
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/clients/login", address, port), bytes.NewBuffer(jsonBytes))
+	if err != nil {
+		log.Print("error with request: ", err)
+		return 0, "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// create the http client struct and execute the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Print("error with sending request", err)
+		return 0, "", err
+	}
+
+	// read the body into a byte array and return the results
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
+	}
+
+	return resp.StatusCode, string(body), nil
 }
 
 func CharacterSelectRequest(token string, id int) (string, error) {

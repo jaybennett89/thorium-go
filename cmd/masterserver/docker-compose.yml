@@ -14,4 +14,8 @@ cache:
   image: redis
 
 db:
-  image: postgres
+  image: library/postgres
+  volumes:
+   - ./../../sql:/docker-entrypoint-initdb.d
+  environment:
+   - POSTGRES_PASSWORD=secret

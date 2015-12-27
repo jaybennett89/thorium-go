@@ -59,9 +59,14 @@ func init() {
 
 	log.Print("testing postgres connection")
 	// check postgres
-	db, err = sql.Open("postgres", "user=thoriumnet password=thoriumtest dbname=thoriumnet host=db")
+	db, err = sql.Open("postgres", "port=5432 host=db user=postgres password=secret dbname=postgres sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		log.Print(err)
 	}
 
 	log.Print("testing redis connection")
