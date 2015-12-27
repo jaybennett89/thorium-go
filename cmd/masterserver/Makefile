@@ -6,6 +6,7 @@ all: build
 
 build:
 	go build master-server.go
+	mv master-server ../../
 
 image: build
 	docker build -t master-server .
