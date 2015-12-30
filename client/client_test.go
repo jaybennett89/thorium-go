@@ -98,11 +98,11 @@ func Test2B_Disconnect(t *testing.T) {
 	}
 }
 
-// Test 2B: Login
+// Test 2C: Login
 // HTTP POST /clients/login
 
-func Test2B_Login(t *testing.T) {
-	fmt.Println("Test 2B: Login")
+func Test2C_Login(t *testing.T) {
+	fmt.Println("Test 2C: Login")
 
 	// execute request
 	responseCode, body, err := Login(masterEndpoint, user, password)

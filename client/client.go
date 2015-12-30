@@ -189,24 +189,3 @@ func CharacterCreateRequest(token string, name string) (string, error) {
 	log.Print("create character response: ", string(body))
 	return string(body), nil
 }
-
-func DisconnectRequest(token string) (string, error) {
-
-	buf := []byte(token)
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/clients/disconnect", address, port), bytes.NewBuffer(buf))
-	if err != nil {
-		log.Print("error with request: ", err)
-		return "err", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Print("error with sending request", err)
-		return "err", err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	log.Print("disonnect response: ", string(body))
-	return string(body), nil
-}
