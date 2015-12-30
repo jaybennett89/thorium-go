@@ -120,6 +120,31 @@ func Login(masterEndpoint string, username string, password string) (int, string
 	return resp.StatusCode, string(body), nil
 }
 
+func Disconnect(masterEndpoint string, token string) (int, string, error) {
+	url := fmt.Sprintf("http://%s/clients/disconnect", masterEndpoint)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(token)))
+	if err != nil {
+		log.Print("error with request: ", err)
+		return 0, "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Print("error with sending request", err)
+		return 0, "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
+	}
+
+	return resp.StatusCode, string(body), nil
+}
+
 func CharacterSelectRequest(token string, id int) (string, error) {
 
 	var selectReq request.SelectCharacter

@@ -129,7 +129,7 @@ func handleClientRegister(httpReq *http.Request) (int, string) {
 		return 400, "Bad Request"
 	}
 
-	uid, err := thordb.RegisterAccount(username, password)
+	token, charIds, err := thordb.RegisterAccount(username, password)
 	if err != nil {
 		log.Print(err)
 		switch err.Error() {
@@ -140,8 +140,16 @@ func handleClientRegister(httpReq *http.Request) (int, string) {
 		}
 	}
 
-	log.Print("thordb: registered player (", uid, ")")
-	return 200, fmt.Sprintf("UserId%s", strconv.Itoa(uid))
+	var resp request.LoginResponse
+	resp.UserToken = token
+	resp.CharacterIDs = charIds
+	jsonBytes, err := json.Marshal(&resp)
+	if err != nil {
+		log.Print(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, string(jsonBytes)
 }
 
 func handleClientDisconnect(httpReq *http.Request) (int, string) {

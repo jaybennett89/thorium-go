@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"thorium-go/globals"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -108,22 +109,26 @@ func RegisterActiveGame(game_id int, machine_id int, port int) (bool, error) {
 	return exists, err
 }
 
-func RegisterAccount(username string, password string) (int, error) {
+func RegisterAccount(username string, password string) (string, []int, error) {
+
 	var foundname string
+
+	// check to see if username is taken already
 	err := db.QueryRow("SELECT username FROM account_data WHERE username LIKE $1;", username).Scan(&foundname)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Print("Username available")
 	case err != nil:
 		log.Print(err)
-		return 0, err
+		return "", nil, err
 	default:
 		log.Print("Username is already in use")
-		return 0, errors.New("thordb: already in use")
+		return "", nil, errors.New("thordb: already in use")
 	}
 
 	saltSize := 16
-	var alg string = "sha1"
+	alg := "sha1"
+
 	//allocates 16+sha1.Size bytes to the bufer
 	//creates slice with length saltSize and capacity of saltSize+sha1.Size
 	buf := make([]byte, saltSize, saltSize+sha1.Size)
@@ -133,68 +138,102 @@ func RegisterAccount(username string, password string) (int, error) {
 
 	if e != nil {
 		fmt.Println("filling buf with random data failed")
-		return 0, e
+		return "", nil, e
 	}
 
+	// create password hash
 	dirtySalt := sha1.New()
 	dirtySalt.Write(buf)
 	dirtySalt.Write([]byte(password))
 	salt := dirtySalt.Sum(buf)
-
 	combination := string(salt) + string(password)
 	passwordHash := sha1.New()
 	io.WriteString(passwordHash, combination)
-	log.Printf("Password Hash : %x \n", passwordHash.Sum(nil))
-	log.Printf("BSalt: %x \n", salt)
+
 	var uid int
-	var timenow = time.Now()
+	timenow := time.Now()
+
+	// register new account in the database
 	err = db.QueryRow("INSERT INTO account_data (username, password, salt, algorithm, createdon, lastlogin) VALUES ($1, $2, $3, $4, $5, $6) RETURNING user_id", username, passwordHash.Sum(nil), salt, alg, timenow, timenow).Scan(&uid)
 	if err != nil {
 		fmt.Println("error inserting account data: ", err)
-		return 0, err
+		return "", nil, err
 	}
 
-	return uid, err
+	// create the jwt token data
+	t := jwt.New(jwt.SigningMethodRS256)
+	t.Claims["uid"] = uid
+	t.Claims["iat"] = time.Now()
+
+	// create signed token string
+	token, err := t.SignedString(signKey)
+	if err != nil {
+		return "", nil, err
+	}
+
+	// grab the character ids from db
+	// this should always be empty but check anyway
+	var charIds []int
+	rows, err := db.Query("SELECT id FROM characters where uid=$1", uid)
+	if err != nil {
+		log.Print("error querying character ids from uid: ", err)
+		return "", nil, err
+	}
+	defer rows.Close()
+	var charId int
+	for rows.Next() {
+		err = rows.Scan(&charId)
+		if err != nil {
+			log.Print("error scanning row to get character ID: ", err)
+		}
+		charIds = append(charIds, charId)
+	}
+
+	// set the session in redis and give it an expiry
+	key := fmt.Sprintf(sessionKey, uid)
+	kvstore.HSet(key, hkeyUserToken, token)
+	kvstore.Expire(key, time.Second*globals.SESSION_EXPIRE_SECONDS)
+
+	return token, charIds, nil
 }
 
 func LoginAccount(username string, password string) (string, []int, error) {
-	var token_str string
-	var charIDs []int
 
-	// get the account info from db
 	var hashedPassword []byte
 	var salt []byte
 	var uid int
+
+	// get the account info from the database
 	err := db.QueryRow("SELECT password, salt, user_id FROM account_data WHERE username LIKE $1", username).Scan(&hashedPassword, &salt, &uid)
 	switch {
 	case err == sql.ErrNoRows:
 		log.Printf("thordb: user does not exist %s", username)
-		return token_str, charIDs, errors.New("thordb: does not exist")
+		return "", nil, errors.New("thordb: does not exist")
 	case err != nil:
 		log.Print(err)
-		return token_str, charIDs, err
+		return "", nil, err
 	}
 
 	combination := string(salt) + string(password)
 	passwordHash := sha1.New()
 	io.WriteString(passwordHash, combination)
+
+	// compare password hashes
 	match := bytes.Equal(passwordHash.Sum(nil), hashedPassword)
 	if !match {
-		return token_str, charIDs, errors.New("thordb: invalid password")
+		return "", nil, errors.New("thordb: invalid password")
 	}
 
-	// create the jwt token
-	token := jwt.New(jwt.SigningMethodRS256)
-	token.Claims["uid"] = uid
-	token.Claims["iat"] = time.Now()
-	token_str, err = token.SignedString(signKey)
+	// create the jwt token data
+	t := jwt.New(jwt.SigningMethodRS256)
+	t.Claims["uid"] = uid
+	t.Claims["iat"] = time.Now()
 
+	// create signed token string
+	token, err := t.SignedString(signKey)
 	if err != nil {
-		return token_str, charIDs, err
+		return "", nil, err
 	}
-
-	// I'm going to insert the raw token data into redis here, but is that security proof?
-	// In future we could maybe use a field in the encrypted claim as the session key? im not sure if that works or not though
 
 	// first check if a session already exists, if so reject as "already logged on" unless the time is substantially old (> 5min)
 	var alreadyLoggedIn bool = true
@@ -205,45 +244,37 @@ func LoginAccount(username string, password string) (string, []int, error) {
 		case "redis: nil":
 			alreadyLoggedIn = false
 		default:
-			return token_str, charIDs, err
+			return "", nil, err
 		}
 	}
 
 	if alreadyLoggedIn {
-		return token_str, charIDs, errors.New("thordb: already logged in")
+		return "", nil, errors.New("thordb: already logged in")
 	}
 
-	// set the session in redis and give it a 2 minute expiry
-	// the client needs to ping once every 2 minutes to refresh the expiry
-	kvstore.HSet(fmt.Sprintf(sessionKey, uid), hkeyUserToken, token_str)
-	kvstore.Expire(fmt.Sprintf(sessionKey, uid), time.Second*120)
-
 	//grab the character ids from db
-
-	//SELECT id FROM characters WHERE uid='5'
-	charIDs = make([]int, 10)
+	var charIds []int
 	rows, err := db.Query("SELECT id FROM characters where uid=$1", uid)
 	if err != nil {
 		log.Print("error querying character ids from uid: ", err)
-		return token_str, charIDs, err
+		return "", nil, err
 	}
 	defer rows.Close()
-	var charID int
+	var charId int
 	for rows.Next() {
-		err = rows.Scan(&charID)
+		err = rows.Scan(&charId)
 		if err != nil {
 			log.Print("error scanning row to get character ID: ", err)
-			return token_str, charIDs, err
 		}
-		for index, _ := range charIDs {
-			if charIDs[index] == 0 {
-				charIDs[index] = charID
-				break
-			}
-		}
+		charIds = append(charIds, charId)
 	}
 
-	return token_str, charIDs, nil
+	// set the session in redis and give it an expiry
+	key := fmt.Sprintf(sessionKey, uid)
+	kvstore.HSet(key, hkeyUserToken, token)
+	kvstore.Expire(key, time.Second*globals.SESSION_EXPIRE_SECONDS)
+
+	return token, charIds, nil
 }
 
 func Disconnect(userToken string) error {

@@ -1,15 +1,17 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
 	"testing"
+	"thorium-go/requests"
 	"time"
 )
 
 var masterEndpoint = "thorium-sky.net:6960"
-var accountToken = ""
+var accountToken string
 
 var user string = "test"
 var password string = "test"
@@ -44,29 +46,56 @@ func Test2A_Register(t *testing.T) {
 		// pick a random number between 10k-1M
 		rand.Seed(time.Now().UTC().UnixNano())
 		randNum := rand.Intn(990000) + 10000
-		fmt.Println(randNum)
 		// create user string
 		user = fmt.Sprintf("test%d", randNum)
 
 		fmt.Println(user)
 		// execute request
-		responseCode, accountToken, err := Register(masterEndpoint, user, password)
+		responseCode, body, err := Register(masterEndpoint, user, password)
 		if err != nil {
 			log.Print(err)
 			t.FailNow()
 		}
 
-		fmt.Printf("register response: status %d, %s\n", responseCode, accountToken)
+		fmt.Printf("register response: status %d\n", responseCode)
 		if responseCode == 200 {
 			log.Print("registered ", user)
-			log.Print("response body ", accountToken)
-			return
+
+			var resp request.LoginResponse
+			json.Unmarshal([]byte(body), &resp)
+
+			log.Print("userToken=", resp.UserToken)
+			if resp.UserToken != "" {
+				// success
+				accountToken = resp.UserToken
+				return
+			}
 		}
 
 		tries = tries - 1
 	}
 
+	// fail if all tries are used up
+	log.Print("all register tries used")
 	t.Fail()
+}
+
+// Test 2B: Disconnect
+// HTTP POST /clients/disconnect
+func Test2B_Disconnect(t *testing.T) {
+
+	fmt.Println("Test 2B: Disconnect")
+
+	rc, _, err := Disconnect(masterEndpoint, accountToken)
+	if err != nil {
+		log.Print(err)
+		t.FailNow()
+	}
+
+	log.Print("disconnect response code = ", rc)
+	if rc != 200 {
+		t.FailNow()
+	}
 }
 
 // Test 2B: Login
@@ -82,12 +111,11 @@ func Test2B_Login(t *testing.T) {
 		t.FailNow()
 	}
 
-	fmt.Printf("register response: status %d, %s\n", responseCode, accountToken)
-	if responseCode == 200 {
+	fmt.Printf("register response: status %d, %s\n", responseCode, body)
+	if responseCode != 200 {
+		t.Fail()
+	} else {
 		log.Print("login ", user)
 		log.Print("response body ", body)
-		return
 	}
-
-	//statusCode, body, err := Login(masterEndpoint, user, password)
 }
