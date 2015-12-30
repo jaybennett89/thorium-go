@@ -173,7 +173,7 @@ func RegisterAccount(username string, password string) (string, []int, error) {
 
 	// grab the character ids from db
 	// this should always be empty but check anyway
-	var charIds []int
+	var charIds []int = []int{}
 	rows, err := db.Query("SELECT id FROM characters where uid=$1", uid)
 	if err != nil {
 		log.Print("error querying character ids from uid: ", err)
@@ -253,7 +253,7 @@ func LoginAccount(username string, password string) (string, []int, error) {
 	}
 
 	//grab the character ids from db
-	var charIds []int
+	var charIds []int = []int{}
 	rows, err := db.Query("SELECT id FROM characters where uid=$1", uid)
 	if err != nil {
 		log.Print("error querying character ids from uid: ", err)

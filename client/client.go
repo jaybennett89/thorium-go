@@ -11,9 +11,6 @@ import (
 import "bytes"
 import "io/ioutil"
 
-var address string = "52.25.124.72"
-var port int = 6960
-
 func GetStatus(masterEndpoint string) (int, string, error) {
 
 	url := fmt.Sprintf("http://%s/status", masterEndpoint)
@@ -145,47 +142,51 @@ func Disconnect(masterEndpoint string, token string) (int, string, error) {
 	return resp.StatusCode, string(body), nil
 }
 
-func CharacterSelectRequest(token string, id int) (string, error) {
+func CharacterSelectRequest(masterEndpoint string, accountToken string, id int) (int, string, error) {
 
 	var selectReq request.SelectCharacter
-	selectReq.AccountToken = token
+	selectReq.AccountToken = accountToken
 	selectReq.ID = id
 	jsonBytes, err := json.Marshal(&selectReq)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/characters/%d/select", address, port, id), bytes.NewBuffer(jsonBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/characters/%d/select", masterEndpoint, id), bytes.NewBuffer(jsonBytes))
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Print("Error with request 2: ", err)
-		return "err", err
+		log.Print("error with sending request", err)
+		return 0, "", err
 	}
+
 	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
-	return string(body), nil
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
+	}
+
+	return resp.StatusCode, string(body), nil
 }
 
-func CharacterCreateRequest(token string, name string) (string, error) {
+func CharacterCreateRequest(masterEndpoint string, accountToken string, name string) (int, string, error) {
 
 	var charCreateReq request.CreateCharacter
-	charCreateReq.AccountToken = token
+	charCreateReq.AccountToken = accountToken
 	charCreateReq.Name = name
 	jsonBytes, err := json.Marshal(&charCreateReq)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s:%d/characters/new", address, port), bytes.NewBuffer(jsonBytes))
-	req.Header.Set("Content-Type", "application/json")
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/characters/new", masterEndpoint), bytes.NewBuffer(jsonBytes))
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Print("Error with request 2: ", err)
-		return "err", err
+		log.Print("Error with request: ", err)
+		return 0, "", err
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	log.Print("create character response: ", string(body))
-	return string(body), nil
+	return resp.StatusCode, string(body), nil
 }

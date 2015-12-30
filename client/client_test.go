@@ -57,14 +57,12 @@ func Test2A_Register(t *testing.T) {
 			t.FailNow()
 		}
 
-		fmt.Printf("register response: status %d\n", responseCode)
+		fmt.Printf("register response: status %d, body %s\n", responseCode, body)
 		if responseCode == 200 {
-			log.Print("registered ", user)
 
 			var resp request.LoginResponse
 			json.Unmarshal([]byte(body), &resp)
 
-			log.Print("userToken=", resp.UserToken)
 			if resp.UserToken != "" {
 				// success
 				accountToken = resp.UserToken
@@ -111,11 +109,9 @@ func Test2C_Login(t *testing.T) {
 		t.FailNow()
 	}
 
-	fmt.Printf("register response: status %d, %s\n", responseCode, body)
+	fmt.Printf("login response: status %d, %s\n", responseCode, body)
 	if responseCode != 200 {
 		t.Fail()
 	} else {
-		log.Print("login ", user)
-		log.Print("response body ", body)
 	}
 }
