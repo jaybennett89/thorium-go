@@ -170,7 +170,7 @@ func CharacterSelectRequest(masterEndpoint string, accountToken string, id int) 
 	return resp.StatusCode, string(body), nil
 }
 
-func CharacterCreateRequest(masterEndpoint string, accountToken string, name string) (int, string, error) {
+func CreateCharacter(masterEndpoint string, accountToken string, name string) (int, string, error) {
 
 	var charCreateReq request.CreateCharacter
 	charCreateReq.AccountToken = accountToken

@@ -33,7 +33,6 @@ func main() {
 	m.Post("/characters/new", handleCreateCharacter)
 	m.Get("/characters/:id", handleGetCharacter)
 	m.Get("/characters/:id/profile", handleGetCharProfile)
-	m.Post("/characters/:id/select", handleCharacterSelect)
 
 	// games
 	m.Post("/games/:id/register_server", handleRegisterServer)
@@ -183,8 +182,7 @@ func handleCreateCharacter(httpReq *http.Request) (int, string) {
 	character := thordb.NewCharacterData()
 	character.Name = req.Name
 
-	var characterSession *thordb.CharacterSession
-	characterSession, err = thordb.CreateCharacter(req.AccountToken, character)
+	characterId, err := thordb.CreateCharacter(req.AccountToken, character)
 	if err != nil {
 		log.Print(err)
 		switch err.Error() {
@@ -196,9 +194,9 @@ func handleCreateCharacter(httpReq *http.Request) (int, string) {
 			return 500, "Internal Server Error"
 		}
 	}
+
 	var resp request.CharacterSessionResponse
-	resp.CharacterToken = characterSession.Token
-	resp.GameId = characterSession.GameId
+	resp.CharacterId = characterId
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&resp)
@@ -358,35 +356,6 @@ func handleRegisterServer(httpReq *http.Request, params martini.Params) (int, st
 	fmt.Println("Found game ", gameId)
 	return 200, "OK"
 
-}
-
-func handleCharacterSelect(httpReq *http.Request) (int, string) {
-	decoder := json.NewDecoder(httpReq.Body)
-	var req request.SelectCharacter
-	err := decoder.Decode(&req)
-	if err != nil || req.ID == 0 || req.AccountToken == "" {
-		log.Print("bad json request", httpReq.Body)
-		return 400, "Bad Request"
-	}
-
-	charSession, err := thordb.SelectCharacter(req.AccountToken, req.ID)
-	if err != nil {
-		log.Print(err)
-		return 500, "Internal Server Error"
-	}
-
-	var resp request.CharacterSessionResponse
-	resp.CharacterToken = charSession.Token
-	resp.GameId = charSession.GameId
-
-	var jsonBytes []byte
-	jsonBytes, err = json.Marshal(&resp)
-	if err != nil {
-		log.Print(err)
-		return 500, "Internal Server Error"
-	}
-
-	return 200, string(jsonBytes)
 }
 
 func handleMachineHeartbeat(httpReq *http.Request) (int, string) {

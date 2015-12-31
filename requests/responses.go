@@ -6,8 +6,7 @@ type LoginResponse struct {
 }
 
 type CharacterSessionResponse struct {
-	CharacterToken string `json:"characterToken"`
-	GameId         int    `json:"gameId"`
+	CharacterId int `json:"characterId"`
 }
 
 type MachineRegisterResponse struct {

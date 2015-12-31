@@ -421,11 +421,11 @@ func validateToken(token_str string) (int, error) {
 	}
 }
 
-func CreateCharacter(userToken string, character *CharacterData) (*CharacterSession, error) {
+func CreateCharacter(userToken string, character *CharacterData) (int, error) {
 
 	uid, err := validateToken(userToken)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	var foundname string
@@ -435,193 +435,26 @@ func CreateCharacter(userToken string, character *CharacterData) (*CharacterSess
 		log.Printf("thordb: name is available %s", character.Name)
 	case err != nil:
 		log.Print(err)
-		return nil, err
+		return 0, err
 	default:
-		return nil, errors.New("thordb: already in use")
+		return 0, errors.New("thordb: already in use")
 	}
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(character)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	var id int
 	err = db.QueryRow("INSERT INTO characters (uid, name, game_data) VALUES ($1, $2, $3) RETURNING id", uid, character.Name, string(jsonBytes)).Scan(&id)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	// create new jwt token with character id in claims and return new session with it
-	token := jwt.New(jwt.SigningMethodRS256)
-	token.Claims["uid"] = uid
-	token.Claims["id"] = id
-	token.Claims["iat"] = time.Now()
+	// need to store in cache?
 
-	var token_str string
-	token_str, err = token.SignedString(signKey)
-	if err != nil {
-		return nil, err
-	}
-
-	charSession := NewCharacterSessionFrom(character)
-	charSession.UserID = uid
-	charSession.ID = id
-	charSession.Token = token_str
-
-	// search db for any existing tutorial games
-	var game_id int
-	err = db.QueryRow("SELECT game_id FROM games WHERE game_mode LIKE $1 ORDER BY RANDOM() LIMIT 1", "tutorial").Scan(&game_id)
-	switch {
-
-	case err == sql.ErrNoRows:
-		log.Print("thordb: no tutorial games found")
-
-		var game_id int
-		err = db.QueryRow("INSERT INTO games (map_name, game_mode) VALUES ('Mode_Sandbox', 'tutorial') RETURNING game_id").Scan(&game_id)
-		if err != nil {
-			return nil, err
-		}
-
-		// todo
-		// provision new game on an available machine here
-		err = ProvisionNewGame(game_id, "Mode_Sandbox", "tutorial")
-		if err != nil {
-			return nil, err
-		}
-
-		// then
-		// return character session on new tutorial game
-		charSession.GameId = game_id
-		return charSession, nil
-
-	case err != nil:
-		return nil, err
-
-	}
-
-	charSession.GameId = game_id
-	return charSession, nil
-}
-
-func SelectCharacter(userToken string, id int) (*CharacterSession, error) {
-
-	uid, err := validateToken(userToken)
-	if err != nil {
-		return nil, err
-	}
-
-	// read from characters table and get game_data json string
-	var game_data string
-	var game_id int
-	err = db.QueryRow("SELECT game_data, last_game_id from characters WHERE uid = $1 AND id = $2", uid, id).Scan(&game_data, &game_id)
-	if err != nil {
-		log.Print(err)
-		return nil, err
-	}
-
-	var character CharacterData
-	json.Unmarshal([]byte(game_data), &character)
-	if err != nil {
-		log.Print("thordb: unable to construct character from db data")
-		log.Print(err)
-		return nil, err
-	}
-
-	// todo: create new jwt token with character id in claims and return new session with it
-	// create the jwt token
-	token := jwt.New(jwt.SigningMethodRS256)
-	token.Claims["uid"] = uid
-	token.Claims["id"] = id
-	token.Claims["iat"] = time.Now()
-
-	var token_str string
-	token_str, err = token.SignedString(signKey)
-	if err != nil {
-		return nil, err
-	}
-
-	charSession := NewCharacterSessionFrom(&character)
-	charSession.UserID = uid
-	charSession.ID = id
-	charSession.Token = token_str
-
-	// if most recent session is 0 then the player has never played a game
-	// therefore we let them join an availabe tutorial instance or start a new one
-	if game_id == 0 {
-		err = db.QueryRow("SELECT game_id FROM games WHERE game_mode LIKE $1 ORDER BY RANDOM() LIMIT 1", "tutorial").Scan(&game_id)
-		switch {
-		case err == sql.ErrNoRows:
-			log.Print("thordb: no tutorial games found")
-
-			var game_id int
-			err = db.QueryRow("INSERT INTO games (map_name, game_mode) VALUES ('Mode_Sandbox', 'tutorial') RETURNING game_id").Scan(&game_id)
-			if err != nil {
-				return nil, err
-			}
-
-			// todo
-			// provision new game on an available machine here
-			err = ProvisionNewGame(game_id, "Mode_Sandbox", "tutorial")
-			if err != nil {
-				return nil, err
-			}
-
-			// then
-			// return character session on new tutorial game
-			charSession.GameId = game_id
-
-		case err != nil:
-			return nil, err
-
-		default:
-			charSession.GameId = game_id
-		}
-	} else {
-		// game_id was not zero, so try to return to last game session
-		// if it doesnt exist as an active game, then reload it onto a new machine
-		// todo: what if it is a completed game? probably return to a fallback location such as home base
-		var map_name string
-		var game_mode string
-		err = db.QueryRow("SELECT (map_name, game_mode) FROM games WHERE game_id = $1", game_id).Scan(&map_name, &game_mode)
-		// game never existed but this should be a major error on our part because we got this id from the db earlier
-		// so lets not handle it gracefully
-		if err != nil {
-			return nil, err
-		}
-
-		var address string
-		var port int
-		err = db.QueryRow("SELECT (remote_address, port) FROM game_servers JOIN machines USING (machine_id) WHERE game_id = $1", game_id).Scan(&address, &port)
-		switch {
-
-		case err == sql.ErrNoRows:
-			log.Print("thordb: game not found")
-
-			err = ProvisionNewGame(game_id, map_name, game_mode)
-			if err != nil {
-				return nil, err
-			}
-
-			// then
-			// return character session on new tutorial game
-		}
-
-		charSession.GameId = game_id
-	}
-	err = kvstore.HSet(fmt.Sprintf(sessionKey, charSession.UserID), hkeyCharacterToken, charSession.Token).Err()
-	if err != nil {
-		log.Print("thordb: kvstore unreachable")
-		log.Print(err)
-	}
-
-	err = kvstore.HSet(fmt.Sprintf(sessionKey, charSession.UserID), "characterData", game_data).Err()
-	if err != nil {
-		log.Print("thordb: kvstore unreachable")
-		log.Print(err)
-	}
-
-	return charSession, nil
+	return id, nil
 }
 
 func GetServerInfo(game_id int) (string, int, error) {

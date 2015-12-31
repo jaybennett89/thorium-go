@@ -113,5 +113,42 @@ func Test2C_Login(t *testing.T) {
 	if responseCode != 200 {
 		t.Fail()
 	} else {
+		var resp request.LoginResponse
+		json.Unmarshal([]byte(body), &resp)
+
+		if resp.UserToken == "" {
+			t.FailNow()
+		}
+
+		accountToken = resp.UserToken
 	}
 }
+
+// Test 3A: Create Character
+// HTTP POST /characters/new
+
+func Test3A_CreateCharacter(t *testing.T) {
+	fmt.Println("Test 3A: Create Character")
+
+	// execute request
+	rc, body, err := CreateCharacter(masterEndpoint, accountToken, user)
+	if err != nil {
+		fmt.Println(err)
+		t.FailNow()
+	}
+
+	fmt.Printf("create character response: status %d, %s\n", rc, body)
+
+	if rc != 200 {
+		t.FailNow()
+	}
+}
+
+// Test 3B: Get Character Info
+// for loop over characterIds
+
+// Test 4A: Query For Game List
+
+// Test 4B: Create New Game
+
+// Test 4C: Join Existing Game
