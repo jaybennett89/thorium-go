@@ -443,7 +443,7 @@ func CreateCharacter(sessionKey string, name string, classId int) (int, error) {
 
 	character := model.NewCharacter()
 	character.Name = name
-	character.ClassId = classId
+	character.SetClassAttributes(classId)
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(character.CharacterState)
