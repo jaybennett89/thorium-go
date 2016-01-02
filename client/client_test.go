@@ -12,6 +12,7 @@ import (
 
 var masterEndpoint = "thorium-sky.net:6960"
 var accountToken string
+var characterIds []int
 
 var user string = "test"
 var password string = "test"
@@ -66,6 +67,7 @@ func Test2A_Register(t *testing.T) {
 			if resp.UserToken != "" {
 				// success
 				accountToken = resp.UserToken
+				characterIds = resp.CharacterIDs
 				return
 			}
 		}
@@ -121,6 +123,7 @@ func Test2C_Login(t *testing.T) {
 		}
 
 		accountToken = resp.UserToken
+		characterIds = resp.CharacterIDs
 	}
 }
 
@@ -131,21 +134,56 @@ func Test3A_CreateCharacter(t *testing.T) {
 	fmt.Println("Test 3A: Create Character")
 
 	// execute request
-	rc, body, err := CreateCharacter(masterEndpoint, accountToken, user)
+	rc, body, err := CreateCharacter(masterEndpoint, accountToken, user, 1)
 	if err != nil {
 		fmt.Println(err)
 		t.FailNow()
 	}
 
 	fmt.Printf("create character response: status %d, %s\n", rc, body)
-
 	if rc != 200 {
 		t.FailNow()
 	}
+
+	var resp request.NewCharacterResponse
+	err = json.Unmarshal([]byte(body), &resp)
+	if err != nil {
+		fmt.Println("failed json unmarshal")
+		t.FailNow()
+	}
+
+	if resp.CharacterId == 0 {
+		fmt.Println("response returned invalid character id")
+		t.FailNow()
+	}
+	characterIds = append(characterIds, resp.CharacterId)
+	fmt.Println("characterIds: ", characterIds)
 }
 
 // Test 3B: Get Character Info
-// for loop over characterIds
+
+func Test3B_GetCharacter(t *testing.T) {
+
+	fmt.Println("Test3B: Get Character Info")
+
+	count := len(characterIds)
+	if count == 0 {
+		t.FailNow()
+	}
+
+	for i := 0; i < count; i++ {
+
+		rc, body, err := GetCharacter(masterEndpoint, characterIds[i])
+		if err != nil {
+			t.FailNow()
+		}
+
+		fmt.Printf("get character response: status %d, %s\n", rc, body)
+		if rc != 200 {
+			t.FailNow()
+		}
+	}
+}
 
 // Test 4A: Query For Game List
 

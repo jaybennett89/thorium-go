@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"log"
 	"thorium-go/globals"
+	"thorium-go/model"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -421,18 +422,18 @@ func validateToken(token_str string) (int, error) {
 	}
 }
 
-func CreateCharacter(userToken string, character *CharacterData) (int, error) {
+func CreateCharacter(sessionKey string, name string, classId int) (int, error) {
 
-	uid, err := validateToken(userToken)
+	uid, err := validateToken(sessionKey)
 	if err != nil {
 		return 0, err
 	}
 
 	var foundname string
-	err = db.QueryRow("SELECT name FROM characters WHERE name LIKE $1", character.Name).Scan(&foundname)
+	err = db.QueryRow("SELECT name FROM characters WHERE name LIKE $1", name).Scan(&foundname)
 	switch {
 	case err == sql.ErrNoRows:
-		log.Printf("thordb: name is available %s", character.Name)
+		log.Printf("thordb: name is available %s", name)
 	case err != nil:
 		log.Print(err)
 		return 0, err
@@ -440,8 +441,12 @@ func CreateCharacter(userToken string, character *CharacterData) (int, error) {
 		return 0, errors.New("thordb: already in use")
 	}
 
+	character := model.NewCharacter()
+	character.Name = name
+	character.ClassId = classId
+
 	var jsonBytes []byte
-	jsonBytes, err = json.Marshal(character)
+	jsonBytes, err = json.Marshal(character.CharacterState)
 	if err != nil {
 		return 0, err
 	}
@@ -482,6 +487,30 @@ func GetServerInfo(game_id int) (string, int, error) {
 	}
 
 	return address, port, nil
+}
+
+func GetCharacter(id int) (*model.Character, error) {
+
+	var name string
+	var gameData string
+
+	err := db.QueryRow("SELECT name, game_data FROM characters WHERE id = $1", id).Scan(&name, &gameData)
+	if err != nil {
+		return nil, err
+	}
+
+	var state model.CharacterState
+	err = json.Unmarshal([]byte(gameData), &state)
+	if err != nil {
+		return nil, err
+	}
+
+	var character model.Character
+	character.Name = name
+	character.CharacterId = id
+	character.CharacterState = state
+
+	return &character, nil
 }
 
 // ToDo: remove this func from public, only exposed for testing

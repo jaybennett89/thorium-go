@@ -179,10 +179,7 @@ func handleCreateCharacter(httpReq *http.Request) (int, string) {
 		return 400, "Bad Request"
 	}
 
-	character := thordb.NewCharacterData()
-	character.Name = req.Name
-
-	characterId, err := thordb.CreateCharacter(req.AccountToken, character)
+	characterId, err := thordb.CreateCharacter(req.SessionKey, req.Name, req.ClassId)
 	if err != nil {
 		log.Print(err)
 		switch err.Error() {
@@ -195,7 +192,7 @@ func handleCreateCharacter(httpReq *http.Request) (int, string) {
 		}
 	}
 
-	var resp request.CharacterSessionResponse
+	var resp request.NewCharacterResponse
 	resp.CharacterId = characterId
 
 	var jsonBytes []byte
@@ -208,8 +205,28 @@ func handleCreateCharacter(httpReq *http.Request) (int, string) {
 	return 200, string(jsonBytes)
 }
 
-func handleGetCharacter(httpReq *http.Request) (int, string) {
-	return 500, "Not Implemented"
+func handleGetCharacter(httpReq *http.Request, params martini.Params) (int, string) {
+
+	// parse character id
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return 400, "Bad Request"
+	}
+
+	// search database for character data
+	fmt.Println("searching database for character ", id)
+	character, err := thordb.GetCharacter(id)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	json, err := json.Marshal(&character)
+	if err != nil {
+		return 500, "Internal Server Error"
+	}
+
+	return 200, string(json)
 }
 
 func handleGetCharProfile(httpReq *http.Request) (int, string) {

@@ -142,16 +142,32 @@ func Disconnect(masterEndpoint string, token string) (int, string, error) {
 	return resp.StatusCode, string(body), nil
 }
 
-func CharacterSelectRequest(masterEndpoint string, accountToken string, id int) (int, string, error) {
+func CreateCharacter(masterEndpoint string, sessionKey string, name string, classId int) (int, string, error) {
 
-	var selectReq request.SelectCharacter
-	selectReq.AccountToken = accountToken
-	selectReq.ID = id
-	jsonBytes, err := json.Marshal(&selectReq)
+	var charCreateReq request.CreateCharacter
+	charCreateReq.SessionKey = sessionKey
+	charCreateReq.Name = name
+	charCreateReq.ClassId = classId
+	jsonBytes, err := json.Marshal(&charCreateReq)
 	if err != nil {
 		return 0, "", err
 	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/characters/%d/select", masterEndpoint, id), bytes.NewBuffer(jsonBytes))
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/characters/new", masterEndpoint), bytes.NewBuffer(jsonBytes))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Print("Error with request: ", err)
+		return 0, "", err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	return resp.StatusCode, string(body), nil
+}
+
+func GetCharacter(masterEndpoint string, characterId int) (int, string, error) {
+
+	url := fmt.Sprintf("http://%s/characters/%d", masterEndpoint, characterId)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -167,26 +183,5 @@ func CharacterSelectRequest(masterEndpoint string, accountToken string, id int) 
 		return resp.StatusCode, "", err
 	}
 
-	return resp.StatusCode, string(body), nil
-}
-
-func CreateCharacter(masterEndpoint string, accountToken string, name string) (int, string, error) {
-
-	var charCreateReq request.CreateCharacter
-	charCreateReq.AccountToken = accountToken
-	charCreateReq.Name = name
-	jsonBytes, err := json.Marshal(&charCreateReq)
-	if err != nil {
-		return 0, "", err
-	}
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/characters/new", masterEndpoint), bytes.NewBuffer(jsonBytes))
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Print("Error with request: ", err)
-		return 0, "", err
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
 	return resp.StatusCode, string(body), nil
 }

@@ -5,7 +5,7 @@ type LoginResponse struct {
 	CharacterIDs []int  `json:"characters"`
 }
 
-type CharacterSessionResponse struct {
+type NewCharacterResponse struct {
 	CharacterId int `json:"characterId"`
 }
 
