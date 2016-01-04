@@ -43,6 +43,15 @@ type Vital struct {
 	RegenRate float64 `json:"regenRate"`
 }
 
+type Game struct {
+	GameId         int    `json:"gameId"`
+	Map            string `json:"map"`
+	Mode           string `json:"mode"`
+	MinimumLevel   int    `json:"minimumLevel"`
+	PlayerCount    int    `json:"playerCount"`
+	MaximumPlayers int    `json:"maxPlayers"`
+}
+
 func NewCharacter() *Character {
 
 	var character Character

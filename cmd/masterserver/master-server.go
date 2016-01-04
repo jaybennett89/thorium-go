@@ -246,7 +246,20 @@ func handleGameServerStatus(httpReq *http.Request) (int, string) {
 }
 
 func handleGetServerList(httpReq *http.Request) (int, string) {
-	return 500, "Not Implemented"
+
+	list, err := thordb.GetGamesList()
+	if err != nil {
+		log.Print(err)
+		return 500, "Internal Server Error"
+	}
+
+	bytes, err := json.Marshal(list)
+	if err != nil {
+		log.Print(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, string(bytes)
 }
 
 func handleGetGameInfo(httpReq *http.Request) (int, string) {

@@ -513,6 +513,28 @@ func GetCharacter(id int) (*model.Character, error) {
 	return &character, nil
 }
 
+func GetGamesList() ([]model.Game, error) {
+
+	rows, err := db.Query("SELECT * FROM games")
+	if err != nil {
+		return nil, err
+	}
+
+	list := make([]model.Game, 0)
+
+	for rows.Next() {
+		var game model.Game
+		err = rows.Scan(&game.GameId, &game.Map, &game.Mode, &game.MinimumLevel, &game.PlayerCount, &game.MaximumPlayers)
+		if err != nil {
+			log.Print("game read error")
+		} else {
+			list = append(list, game)
+		}
+	}
+
+	return list, nil
+}
+
 // ToDo: remove this func from public, only exposed for testing
 // this should be used internally to thordb only!
 func StoreCharacterSnapshot(charSession *CharacterSession) (bool, error) {

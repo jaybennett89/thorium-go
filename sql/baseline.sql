@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS "games" (
 	"game_id" SERIAL PRIMARY KEY,
 	"map_name" TEXT NOT NULL,
 	"game_mode" TEXT NOT NULL
+	"minimum_level" INTEGER DEFAULT 0
+	"player_count" INTEGER DEFAULT 0
+	"maximum_players" INTEGER DEFAULT 16
 );
 
 CREATE TABLE IF NOT EXISTS "game_servers" (

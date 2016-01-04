@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"testing"
+	"thorium-go/model"
 	"thorium-go/requests"
 	"time"
 )
@@ -13,6 +14,7 @@ import (
 var masterEndpoint = "thorium-sky.net:6960"
 var accountToken string
 var characterIds []int
+var gameList []model.Game
 
 var user string = "test"
 var password string = "test"
@@ -186,7 +188,32 @@ func Test3B_GetCharacter(t *testing.T) {
 }
 
 // Test 4A: Query For Game List
+func Test4A_GameGameList(t *testing.T) {
+
+	fmt.Println("Test4A: Get Game List")
+
+	rc, body, err := GetGameList(masterEndpoint)
+	if err != nil {
+		fmt.Println(err)
+		t.FailNow()
+	}
+
+	fmt.Printf("get game list response: status %d, %s\n", rc, body)
+
+	err = json.Unmarshal([]byte(body), &gameList)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if rc != 200 {
+		t.FailNow()
+	}
+}
 
 // Test 4B: Create New Game
+func Test4B_CreateNewGame(t *testing.T) {
+
+	fmt.Println("Test4B: Create New Game")
+
+}
 
 // Test 4C: Join Existing Game

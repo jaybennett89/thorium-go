@@ -185,3 +185,30 @@ func GetCharacter(masterEndpoint string, characterId int) (int, string, error) {
 
 	return resp.StatusCode, string(body), nil
 }
+
+func GetGameList(masterEndpoint string) (int, string, error) {
+
+	url := fmt.Sprintf("http://%s/games", masterEndpoint)
+
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
+	if err != nil {
+		log.Print(err)
+		return 0, "", err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Print("error with sending request", err)
+		return 0, "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp.StatusCode, "", err
+	}
+
+	return resp.StatusCode, string(body), nil
+}
