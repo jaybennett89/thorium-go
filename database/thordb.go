@@ -87,10 +87,15 @@ func init() {
 	log.Print("thordb initialization complete")
 }
 
-func RegisterNewGame(mapName string, maxPlayers int) (int, error) {
+func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers int) (int, error) {
+
 	var gameId int
-	err := db.QueryRow("INSERT INTO games (map_name, max_players) VALUES ( $1, $2 ) RETURNING game_id", mapName, maxPlayers).Scan(&gameId)
-	return gameId, err
+	err := db.QueryRow("INSERT INTO games (map_name, game_mode, minimum_level, maximum_players) VALUES ( $1, $2, $3, $4 ) RETURNING game_id", mapName, gameMode, minimumLevel, maxPlayers).Scan(&gameId)
+	if err != nil {
+		return 0, err
+	}
+
+	return gameId, nil
 }
 
 func RegisterActiveGame(game_id int, machine_id int, port int) (bool, error) {

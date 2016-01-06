@@ -1,9 +1,11 @@
 package request
 
-type NewGame struct {
-	CharacterToken string `json:"characterToken"`
-	Map            string `json:"map"`
-	MaxPlayers     int    `json:"maxPlayers"`
+type CreateNewGame struct {
+	SessionKey   string `json:"sessionKey"`
+	Map          string `json:"map"`
+	GameMode     string `json:"gameMode"`
+	MinimumLevel int    `json:"minimumLevel"`
+	MaxPlayers   int    `json:"maxPlayers"`
 }
 
 type PostNewGame struct {

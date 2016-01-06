@@ -12,7 +12,7 @@ import (
 )
 
 var masterEndpoint = "thorium-sky.net:6960"
-var accountToken string
+var sessionKey string
 var characterIds []int
 var gameList []model.Game
 
@@ -66,9 +66,9 @@ func Test2A_Register(t *testing.T) {
 			var resp request.LoginResponse
 			json.Unmarshal([]byte(body), &resp)
 
-			if resp.UserToken != "" {
+			if resp.SessionKey != "" {
 				// success
-				accountToken = resp.UserToken
+				sessionKey = resp.SessionKey
 				characterIds = resp.CharacterIDs
 				return
 			}
@@ -88,7 +88,7 @@ func Test2B_Disconnect(t *testing.T) {
 
 	fmt.Println("Test 2B: Disconnect")
 
-	rc, _, err := Disconnect(masterEndpoint, accountToken)
+	rc, _, err := Disconnect(masterEndpoint, sessionKey)
 	if err != nil {
 		log.Print(err)
 		t.FailNow()
@@ -120,11 +120,11 @@ func Test2C_Login(t *testing.T) {
 		var resp request.LoginResponse
 		json.Unmarshal([]byte(body), &resp)
 
-		if resp.UserToken == "" {
+		if resp.SessionKey == "" {
 			t.FailNow()
 		}
 
-		accountToken = resp.UserToken
+		sessionKey = resp.SessionKey
 		characterIds = resp.CharacterIDs
 	}
 }
@@ -136,7 +136,7 @@ func Test3A_CreateCharacter(t *testing.T) {
 	fmt.Println("Test 3A: Create Character")
 
 	// execute request
-	rc, body, err := CreateCharacter(masterEndpoint, accountToken, user, 1)
+	rc, body, err := CreateCharacter(masterEndpoint, sessionKey, user, 1)
 	if err != nil {
 		fmt.Println(err)
 		t.FailNow()
@@ -200,11 +200,13 @@ func Test4A_GameGameList(t *testing.T) {
 
 	fmt.Printf("get game list response: status %d, %s\n", rc, body)
 
+	if rc != 200 {
+		t.FailNow()
+	}
+
 	err = json.Unmarshal([]byte(body), &gameList)
 	if err != nil {
 		fmt.Println(err)
-	}
-	if rc != 200 {
 		t.FailNow()
 	}
 }
@@ -213,6 +215,24 @@ func Test4A_GameGameList(t *testing.T) {
 func Test4B_CreateNewGame(t *testing.T) {
 
 	fmt.Println("Test4B: Create New Game")
+
+	mapName := "Map_Sandbox"
+	mode := "Tutorial"
+	minimumLevel := 1
+	maxPlayers := 16
+
+	rc, body, err := CreateNewGame(masterEndpoint, sessionKey, mapName, mode, minimumLevel, maxPlayers)
+	if err != nil {
+		log.Print(err)
+		t.FailNow()
+	}
+
+	fmt.Printf("new game response: status %d, %s\n", rc, body)
+
+	if rc != 202 { // HTTP 202 Created
+		log.Print("failed to create game")
+		t.FailNow()
+	}
 
 }
 

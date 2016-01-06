@@ -3,7 +3,7 @@ package request
 import "thorium-go/model"
 
 type LoginResponse struct {
-	UserToken    string `json:"userToken"`
+	SessionKey   string `json:"sessionKey"`
 	CharacterIDs []int  `json:"characters"`
 }
 
@@ -23,4 +23,8 @@ type ServerInfoResponse struct {
 
 type GetGamesResponse struct {
 	List []model.Game `json:"list"`
+}
+
+type CreateNewGameResponse struct {
+	GameId int `json:"gameId"`
 }

@@ -38,7 +38,7 @@ func main() {
 	m.Post("/games/:id/register_server", handleRegisterServer)
 	m.Post("/games/:id/server_status", handleGameServerStatus)
 
-	m.Post("/games/new", handleGameRequest)
+	m.Post("/games", handleNewGameRequest)
 
 	m.Get("/games", handleGetServerList)
 	m.Get("/games/:id", handleGetGameInfo)
@@ -98,7 +98,7 @@ func handleClientLogin(httpReq *http.Request) (int, string) {
 	}
 
 	var resp request.LoginResponse
-	resp.UserToken = token
+	resp.SessionKey = token
 	resp.CharacterIDs = charIDs
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&resp)
@@ -140,7 +140,7 @@ func handleClientRegister(httpReq *http.Request) (int, string) {
 	}
 
 	var resp request.LoginResponse
-	resp.UserToken = token
+	resp.SessionKey = token
 	resp.CharacterIDs = charIds
 	jsonBytes, err := json.Marshal(&resp)
 	if err != nil {
@@ -328,32 +328,46 @@ func handleUnregisterMachine(httpReq *http.Request, params martini.Params) (int,
 	return 200, "OK"
 }
 
-func handleGameRequest(httpReq *http.Request) (int, string) {
-	fmt.Println("[ThoriumNET] master-server.handleGameRequest")
+func handleNewGameRequest(httpReq *http.Request) (int, string) {
 
 	decoder := json.NewDecoder(httpReq.Body)
-	var req request.NewGame
+	var req request.CreateNewGame
 	err := decoder.Decode(&req)
 	if err != nil {
 		logerr("unable to decode body data", err)
 		return 500, "Internal Server Error"
 	}
 
-	if req.Map == "" {
-		fmt.Println("No Map Name Given")
+	if req.Map == "" || req.GameMode == "" {
 		return 400, "Missing Parameters"
 	}
 
+	if req.MaxPlayers == 0 || req.MaxPlayers > 64 {
+		req.MaxPlayers = 16
+		// use default in extreme cases
+	}
+
+	// validate token
+
 	var gameId int
-	gameId, err = thordb.RegisterNewGame(req.Map, req.MaxPlayers)
+	gameId, err = thordb.CreateNewGame(req.Map, req.GameMode, req.MinimumLevel, req.MaxPlayers)
 	if err != nil {
 		fmt.Println("[ThoriumNET] unable to insert new game record")
 		fmt.Println(err)
 		return 500, "Internal Server Error"
 	}
 
+	// run provisioning thread
+
+	response := request.CreateNewGameResponse{GameId: gameId}
+	bytes, err := json.Marshal(&response)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
 	fmt.Println("[ThoriumNET] new game, id=", strconv.Itoa(gameId))
-	return 200, "OK"
+	return 202, string(bytes)
 }
 
 func handleRegisterServer(httpReq *http.Request, params martini.Params) (int, string) {
