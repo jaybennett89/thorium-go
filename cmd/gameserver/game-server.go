@@ -12,7 +12,6 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	"thorium-go/process"
 	"thorium-go/requests"
 	"thorium-go/usage"
 	"time"
@@ -22,19 +21,19 @@ import _ "github.com/lib/pq"
 import "github.com/go-martini/martini"
 
 var registerData request.MachineRegisterResponse
-var port int
+var listenPort int
 
 func main() {
 	fmt.Println("hello world")
 
 	timeNow := time.Now()
 	rand.Seed(int64(timeNow.Second()))
-	port = rand.Intn(50000)
-	port = port + 10000
+	listenPort = rand.Intn(50000)
+	listenPort = listenPort + 10000
 
-	fmt.Println(strconv.Itoa(port), "\n")
+	fmt.Println(strconv.Itoa(listenPort), "\n")
 
-	reqData := &request.RegisterMachine{Port: port}
+	reqData := &request.RegisterMachine{Port: listenPort}
 	jsonBytes, err := json.Marshal(reqData)
 	if err != nil {
 		log.Fatal(err)
@@ -71,7 +70,7 @@ func main() {
 
 	m.Get("/", handlePingRequest)
 	m.Get("/status", handlePingRequest)
-	m.Post("/games/:id", handlePostNewGame)
+	m.Post("/games", handlePostNewGame)
 	m.Post("/games/:id/register_server", handleRegisterLocalServer)
 
 	c := make(chan os.Signal, 1)
@@ -93,14 +92,14 @@ func main() {
 		}
 	}()
 
-	thisIp := fmt.Sprintf(":%d", port)
+	thisIp := fmt.Sprintf(":%d", listenPort)
 	m.RunOnAddr(thisIp)
 }
 
 func sendHeartbeat() {
 	var err error
 	statusData := &request.MachineStatus{}
-	statusData.MachineToken = registerData.MachineToken
+	statusData.MachineKey = registerData.MachineKey
 	statusData.UsageCPU, _ = usage.GetCPU()
 	statusData.UsageNetwork, _ = usage.GetNetworkUtilization()
 	statusData.PlayerCapacity = 0.0
@@ -134,38 +133,38 @@ func handlePingRequest() (int, string) {
 	return 200, "OK"
 }
 
-func handlePostNewGame(http_req *http.Request, params martini.Params) (int, string) {
+func handlePostNewGame(httpReq *http.Request, params martini.Params) (int, string) {
 
-	defer http_req.Body.Close()
-	decoder := json.NewDecoder(http_req.Body)
-	var req_data request.PostNewGame
-	err := decoder.Decode(&req_data)
+	defer httpReq.Body.Close()
+
+	var data request.NewGameServer
+	decoder := json.NewDecoder(httpReq.Body)
+
+	err := decoder.Decode(&data)
 	if err != nil {
-		log.Print("bad json request:\n", http_req.Body)
-		return 400, "Bad Request"
+
+		log.Print("bad json request:\n", httpReq.Body)
+		return 400, err.Error() // okay to send err back to master
 	}
 
-	if registerData.MachineToken != req_data.MachineToken {
-		log.Print("rejecting failed post new game - incorrect machine token in request")
-		return 400, "Bad Request"
-	}
-
-	var game_id int
-	game_id, err = strconv.Atoi(params["id"])
-	if err != nil {
-		log.Print(err)
-		return 400, "Bad Request"
-	}
-
+	/* dont want to actually start the server yet
 	var server *process.ManagedProcess
-	server, err = process.NewGameServer(game_id, rand.Intn(50000)+10000, port, req_data.GameMode, req_data.MapName)
+	server, err = process.NewGameServer(game_id, rand.Intn(50000)+10000, listenPort, data.GameMode, data.MapName)
 	if err != nil {
 		log.Print(err)
 		return 500, "Internal Server Error"
 	}
 	log.Print("started new game server w/ pid = ", server.Process.Pid)
+	*/
 
-	return 200, "OK"
+	response := request.NewGameServerResponse{registerData.MachineKey}
+
+	json, err := json.Marshal(&response)
+	if err != nil {
+		return 500, err.Error()
+	}
+
+	return 200, string(json)
 }
 
 func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (int, string) {
@@ -174,6 +173,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 	var data request.RegisterGameServer
 	err := decoder.Decode(&data)
 	if err != nil {
+
 		log.Print(err)
 		return 400, "Bad Request"
 	}
@@ -183,6 +183,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&data)
 	if err != nil {
+
 		log.Print(err)
 		return 500, "Internal Server Error"
 	}
@@ -191,6 +192,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 	var req *http.Request
 	req, err = http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
+
 		log.Print(err)
 		return 500, "Internal Server Error"
 	}
@@ -200,12 +202,14 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 	var resp *http.Response
 	resp, err = client.Do(req)
 	if err != nil {
+
 		log.Print(err)
 		return 500, "Internal Server Error"
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
+
 		log.Print("error: couldn't register game server with master")
 		return 500, "Internal Server Error"
 	}
@@ -216,7 +220,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 func shutdown() {
 
 	var reqData request.UnregisterMachine
-	reqData.MachineToken = registerData.MachineToken
+	reqData.MachineKey = registerData.MachineKey
 	jsonBytes, err := json.Marshal(&reqData)
 	if err != nil {
 		return

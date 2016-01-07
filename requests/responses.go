@@ -12,8 +12,8 @@ type NewCharacterResponse struct {
 }
 
 type MachineRegisterResponse struct {
-	MachineId    int    `json:"machineId"`
-	MachineToken string `json:"machineToken"`
+	MachineId  int    `json:"machineId"`
+	MachineKey string `json:"machineKey"`
 }
 
 type ServerInfoResponse struct {
@@ -27,4 +27,8 @@ type GetGamesResponse struct {
 
 type CreateNewGameResponse struct {
 	GameId int `json:"gameId"`
+}
+
+type NewGameServerResponse struct {
+	MachineKey string `json:"machineKey"`
 }

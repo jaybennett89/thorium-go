@@ -52,6 +52,12 @@ type Game struct {
 	MaximumPlayers int    `json:"maxPlayers"`
 }
 
+type Machine struct {
+	MachineId     int    `json:"machineId"`
+	RemoteAddress string `json:"remoteAddress"`
+	ListenPort    int    `json:"listenPort"`
+}
+
 func NewCharacter() *Character {
 
 	var character Character

@@ -26,10 +26,10 @@ func ProvisionNewGame(game_id int, map_name string, game_mode string) error {
 		return errors.New("thordb: does not exist")
 	}
 
-	var data request.PostNewGame
-	data.MachineToken = machineToken
-	data.MapName = map_name
-	data.GameMode = game_mode
+	var data request.NewGameServer
+	//	data.MachineToken = machineToken
+	//	data.MapName = map_name
+	//	data.GameMode = game_mode
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&data)

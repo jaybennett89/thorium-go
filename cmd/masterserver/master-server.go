@@ -286,15 +286,15 @@ func handleRegisterMachine(httpReq *http.Request) (int, string) {
 	machineIp := strings.Split(httpReq.RemoteAddr, ":")[0]
 
 	var machineId int
-	var machineToken string
-	machineId, machineToken, err = thordb.RegisterMachine(machineIp, req.Port)
+	var machineKey string
+	machineId, machineKey, err = thordb.RegisterMachine(machineIp, req.Port)
 	if err != nil {
 		logerr("error registering machine", err)
 		return 500, "Internal Server Error"
 	}
 	var response request.MachineRegisterResponse
 	response.MachineId = machineId
-	response.MachineToken = machineToken
+	response.MachineKey = machineKey
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&response)
@@ -316,7 +316,7 @@ func handleUnregisterMachine(httpReq *http.Request, params martini.Params) (int,
 		return 400, "Bad Request"
 	}
 
-	success, err := thordb.UnregisterMachine(req.MachineToken)
+	success, err := thordb.UnregisterMachine(req.MachineKey)
 	if err != nil {
 		log.Print(err)
 		return 500, "Internal Server Error"
@@ -352,16 +352,23 @@ func handleNewGameRequest(httpReq *http.Request) (int, string) {
 	var gameId int
 	gameId, err = thordb.CreateNewGame(req.Map, req.GameMode, req.MinimumLevel, req.MaxPlayers)
 	if err != nil {
-		fmt.Println("[ThoriumNET] unable to insert new game record")
-		fmt.Println(err)
-		return 500, "Internal Server Error"
-	}
 
-	// run provisioning thread
+		fmt.Println(err)
+
+		switch err.Error() {
+
+		case "thordb: no available servers":
+			return 503, "No Available Servers"
+		default:
+			return 500, "Internal Server Error"
+		}
+
+	}
 
 	response := request.CreateNewGameResponse{GameId: gameId}
 	bytes, err := json.Marshal(&response)
 	if err != nil {
+
 		fmt.Println(err)
 		return 500, "Internal Server Error"
 	}
@@ -407,12 +414,12 @@ func handleMachineHeartbeat(httpReq *http.Request) (int, string) {
 	decoder := json.NewDecoder(httpReq.Body)
 	var req request.MachineStatus
 	err := decoder.Decode(&req)
-	if err != nil || req.MachineToken == "" {
+	if err != nil || req.MachineKey == "" {
 		log.Print("bad json request", httpReq.Body)
 		return 400, "Bad Request"
 	}
 
-	err = thordb.UpdateMachineStatus(req.MachineToken, req.UsageCPU, req.UsageNetwork, req.PlayerCapacity)
+	err = thordb.UpdateMachineStatus(req.MachineKey, req.UsageCPU, req.UsageNetwork, req.PlayerCapacity)
 	if err != nil {
 		log.Print(err)
 		return 500, "Internal Server Error"

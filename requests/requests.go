@@ -1,5 +1,7 @@
 package request
 
+import "thorium-go/model"
+
 type CreateNewGame struct {
 	SessionKey   string `json:"sessionKey"`
 	Map          string `json:"map"`
@@ -8,10 +10,8 @@ type CreateNewGame struct {
 	MaxPlayers   int    `json:"maxPlayers"`
 }
 
-type PostNewGame struct {
-	MachineToken string `json:"machineToken"`
-	MapName      string `json:"mapName"`
-	GameMode     string `json:"gameMode"`
+type NewGameServer struct {
+	Game model.Game `json:"game"`
 }
 
 type RegisterGameServer struct {
@@ -25,11 +25,11 @@ type RegisterMachine struct {
 }
 
 type UnregisterMachine struct {
-	MachineToken string `json:"machineToken"`
+	MachineKey string `json:"machineToken"`
 }
 
 type MachineStatus struct {
-	MachineToken   string  `json:"machineToken"`
+	MachineKey     string  `json:"machineToken"`
 	UsageCPU       float64 `json:"cpuUsagePct"`
 	UsageNetwork   float64 `json:"networkUsagePct"`
 	PlayerCapacity float64 `json:"playerCapacityPct"`

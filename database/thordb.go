@@ -89,11 +89,61 @@ func init() {
 
 func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers int) (int, error) {
 
-	var gameId int
-	err := db.QueryRow("INSERT INTO games (map_name, game_mode, minimum_level, maximum_players) VALUES ( $1, $2, $3, $4 ) RETURNING game_id", mapName, gameMode, minimumLevel, maxPlayers).Scan(&gameId)
+	tx, err := db.Begin()
 	if err != nil {
 		return 0, err
 	}
+
+	var gameId int
+	err = tx.QueryRow("INSERT INTO games (map_name, game_mode, minimum_level, maximum_players) VALUES ( $1, $2, $3, $4 ) RETURNING game_id", mapName, gameMode, minimumLevel, maxPlayers).Scan(&gameId)
+	if err != nil {
+		return 0, err
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	machineList, err := GetMachineList()
+	if err != nil {
+
+		err = tx.Rollback()
+
+		if err != nil {
+
+			fmt.Println(err)
+			return 0, err
+		}
+
+		fmt.Println(err)
+		return 0, err
+	}
+
+	if len(machineList) < 1 {
+
+		err = tx.Rollback()
+		if err != nil {
+
+			return 0, err
+		}
+
+		return 0, errors.New("thordb: no available servers")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+
+		return 0, err
+	}
+
+	// pick a machine
+	// for now its okay to use the first one since we only have one server in dev environment
+	machine := machineList[0]
+
+	//endpoint := fmt.Sprintf("%s:%d", machine.RemoteAddress, machine.ListenPort)
+	//	client.NewGameServer(endpoint, game)
+
+	fmt.Println("selected ", machine.RemoteAddress, ":", machine.ListenPort)
 
 	return gameId, nil
 }
@@ -531,13 +581,36 @@ func GetGamesList() ([]model.Game, error) {
 		var game model.Game
 		err = rows.Scan(&game.GameId, &game.Map, &game.Mode, &game.MinimumLevel, &game.PlayerCount, &game.MaximumPlayers)
 		if err != nil {
-			log.Print("game read error")
+			log.Print("game read error:", err)
 		} else {
 			list = append(list, game)
 		}
 	}
 
 	return list, nil
+}
+
+func GetMachineList() ([]model.Machine, error) {
+
+	rows, err := db.Query("SELECT * FROM machines")
+	if err != nil {
+		return nil, err
+	}
+
+	list := make([]model.Machine, 0)
+
+	for rows.Next() {
+		var m model.Machine
+		err = rows.Scan(&m.MachineId, &m.RemoteAddress, &m.ListenPort)
+		if err != nil {
+			log.Print("machine read error:", err)
+		} else {
+			list = append(list, m)
+		}
+	}
+
+	return list, nil
+
 }
 
 // ToDo: remove this func from public, only exposed for testing
