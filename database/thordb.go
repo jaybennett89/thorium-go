@@ -12,6 +12,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"thorium-go/client"
 	"thorium-go/globals"
 	"thorium-go/model"
 	"time"
@@ -130,20 +131,36 @@ func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers
 		return 0, errors.New("thordb: no available servers")
 	}
 
+	// pick a machine
+	// for now its okay to use the first one since we only have one server in dev environment
+	machine := machineList[0]
+	fmt.Println("selected ", machine.RemoteAddress, ":", machine.ListenPort)
+
+	endpoint := fmt.Sprintf("%s:%d", machine.RemoteAddress, machine.ListenPort)
+	rc, body, err := client.NewGameServer(endpoint, gameId, mapName, gameMode, minimumLevel, maxPlayers)
+	if err != nil {
+
+		err = tx.Rollback()
+		if err != nil {
+
+			return 0, err
+		}
+
+		return 0, err
+	}
+
+	fmt.Println("new game server response status : ", rc, " body : ", body)
+
+	if rc != 200 {
+
+		return 0, errors.New("thordb: machine unavailable")
+	}
+
 	err = tx.Commit()
 	if err != nil {
 
 		return 0, err
 	}
-
-	// pick a machine
-	// for now its okay to use the first one since we only have one server in dev environment
-	machine := machineList[0]
-
-	//endpoint := fmt.Sprintf("%s:%d", machine.RemoteAddress, machine.ListenPort)
-	//	client.NewGameServer(endpoint, game)
-
-	fmt.Println("selected ", machine.RemoteAddress, ":", machine.ListenPort)
 
 	return gameId, nil
 }
@@ -592,7 +609,7 @@ func GetGamesList() ([]model.Game, error) {
 
 func GetMachineList() ([]model.Machine, error) {
 
-	rows, err := db.Query("SELECT * FROM machines")
+	rows, err := db.Query("SELECT machine_id, remote_address, service_listen_port, most_recent_key FROM machines JOIN machines_metadata USING (machine_id)")
 	if err != nil {
 		return nil, err
 	}
@@ -601,7 +618,7 @@ func GetMachineList() ([]model.Machine, error) {
 
 	for rows.Next() {
 		var m model.Machine
-		err = rows.Scan(&m.MachineId, &m.RemoteAddress, &m.ListenPort)
+		err = rows.Scan(&m.MachineId, &m.RemoteAddress, &m.ListenPort, &m.MachineKey)
 		if err != nil {
 			log.Print("machine read error:", err)
 		} else {

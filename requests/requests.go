@@ -1,7 +1,5 @@
 package request
 
-import "thorium-go/model"
-
 type CreateNewGame struct {
 	SessionKey   string `json:"sessionKey"`
 	Map          string `json:"map"`
@@ -11,7 +9,11 @@ type CreateNewGame struct {
 }
 
 type NewGameServer struct {
-	Game model.Game `json:"game"`
+	GameId         int    `json:"gameId"`
+	Map            string `json:"map"`
+	Mode           string `json:"mode"`
+	MinimumLevel   int    `json:"minimumLevel"`
+	MaximumPlayers int    `json:"maxPlayers"`
 }
 
 type RegisterGameServer struct {
