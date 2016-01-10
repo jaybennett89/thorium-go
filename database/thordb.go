@@ -153,7 +153,27 @@ func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers
 
 	if rc != 200 {
 
+		err = tx.Rollback()
+		if err != nil {
+
+			return 0, err
+		}
+
 		return 0, errors.New("thordb: machine unavailable")
+	}
+
+	_, err = tx.Exec("INSERT INTO loading_hosts (game_id, machine_id, kickoff_time) VALUES ( $1, $2, $3 )", gameId, machine.MachineId, time.Now())
+	if err != nil {
+
+		fmt.Println(err)
+
+		err = tx.Rollback()
+		if err != nil {
+
+			return 0, err
+		}
+
+		return 0, err
 	}
 
 	err = tx.Commit()
@@ -165,7 +185,10 @@ func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers
 	return gameId, nil
 }
 
-func RegisterActiveGame(game_id int, machine_id int, port int) (bool, error) {
+func RegisterActiveGame(game_id int, machine_key string, port int) (bool, error) {
+
+	// todo: read machine id from key and validate it
+	machine_id := 1
 
 	res, err := db.Exec("INSERT INTO game_servers (game_id, machine_id, port) VALUES ($1, $2, $3)", game_id, machine_id, port)
 	if err != nil {

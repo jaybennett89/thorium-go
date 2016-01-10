@@ -42,7 +42,13 @@ CREATE TABLE "machines_metadata" (
 	"player_occupancy_pct" REAL
 );
 
-CREATE TABLE "game_servers" (
+CREATE TABLE "loading_hosts" (
+	"game_id" SERIAL PRIMARY KEY references games(game_id) DEFERRABLE INITIALLY DEFERRED,
+	"machine_id" SERIAL references machines(machine_id),
+	"kickoff_time" TIMESTAMP
+);
+
+CREATE TABLE "hosts" (
 	"game_id" SERIAL PRIMARY KEY references games(game_id),
 	"machine_id" SERIAL references machines(machine_id),
 	"port" INTEGER

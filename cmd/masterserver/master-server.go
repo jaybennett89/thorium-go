@@ -35,8 +35,8 @@ func main() {
 	m.Get("/characters/:id/profile", handleGetCharProfile)
 
 	// games
-	m.Post("/games/:id/register_server", handleRegisterServer)
-	m.Post("/games/:id/server_status", handleGameServerStatus)
+	m.Post("/games/register_server", handleRegisterServer)
+	m.Post("/games/server_status", handleGameServerStatus)
 
 	m.Post("/games", handleNewGameRequest)
 
@@ -378,6 +378,7 @@ func handleNewGameRequest(httpReq *http.Request) (int, string) {
 }
 
 func handleRegisterServer(httpReq *http.Request, params martini.Params) (int, string) {
+
 	decoder := json.NewDecoder(httpReq.Body)
 	var req request.RegisterGameServer
 	err := decoder.Decode(&req)
@@ -386,25 +387,20 @@ func handleRegisterServer(httpReq *http.Request, params martini.Params) (int, st
 		return 500, "Internal Server Error"
 	}
 
+	// todo: validate the machine key
 	if req.Port == 0 {
 		fmt.Println("No Port Given")
 		return 400, "Missing Parameters"
 	}
-
-	var gameId int
-	gameId, err = strconv.Atoi(params["id"])
-	if err != nil {
-		logerr(fmt.Sprintf("unable to convert parameter id=%s to integer", params["id"]), err)
-		return 400, "Bad Request"
-	}
-
-	registered, err := thordb.RegisterActiveGame(gameId, req.MachineId, req.Port)
+	/* todo: store active game record
+	registered, err := thordb.RegisterActiveGame(gameId, req.MachineKey, req.Port)
 	if err != nil || !registered {
 		logerr("unable to register game", err)
 		return 500, "Internal Server Error"
 	}
 
 	fmt.Println("Found game ", gameId)
+	*/
 	return 200, "OK"
 
 }

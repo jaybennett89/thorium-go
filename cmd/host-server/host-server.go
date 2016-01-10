@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"thorium-go/gameserver"
 	"thorium-go/requests"
 	"thorium-go/usage"
 	"time"
@@ -20,8 +21,11 @@ import (
 import _ "github.com/lib/pq"
 import "github.com/go-martini/martini"
 
+// application data
 var registerData request.MachineRegisterResponse
 var listenPort int
+
+var masterEndpoint string = "http://thorium-sky.net:6960"
 
 func main() {
 	fmt.Println("hello world")
@@ -38,7 +42,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	request, err := http.NewRequest("POST", "http://52.25.124.72:6960/machines/register", bytes.NewBuffer(jsonBytes))
+
+	url := fmt.Sprintf("%s/machines/register", masterEndpoint)
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,7 +77,7 @@ func main() {
 	m.Get("/", handlePingRequest)
 	m.Get("/status", handlePingRequest)
 	m.Post("/games", handlePostNewGame)
-	m.Post("/games/:id/register_server", handleRegisterLocalServer)
+	m.Post("/games/register_server", handleRegisterLocalServer)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
@@ -106,15 +112,19 @@ func sendHeartbeat() {
 
 	jsonBytes, err := json.Marshal(statusData)
 	if err != nil {
+
 		log.Print(err)
 		return
 	}
 
-	request, err := http.NewRequest("POST", "http://52.25.124.72:6960/machines/status", bytes.NewBuffer(jsonBytes))
+	url := fmt.Sprintf("%s/machines/status", masterEndpoint)
+	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
+
 		log.Print(err)
 		return
 	}
+
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Connection", "close")
 
@@ -122,6 +132,7 @@ func sendHeartbeat() {
 	var resp *http.Response
 	resp, err = client.Do(request)
 	if err != nil {
+
 		log.Print(err)
 		return
 	}
@@ -147,20 +158,18 @@ func handlePostNewGame(httpReq *http.Request, params martini.Params) (int, strin
 		return 400, err.Error() // okay to send err back to master
 	}
 
-	/* dont want to actually start the server yet
-	var server *process.ManagedProcess
-	server, err = process.NewGameServer(game_id, rand.Intn(50000)+10000, listenPort, data.GameMode, data.MapName)
+	err = gameserver.NewGameServer(listenPort, data.GameId, data.Map, data.Mode, data.MinimumLevel, data.MaximumPlayers)
 	if err != nil {
+
 		log.Print(err)
 		return 500, "Internal Server Error"
 	}
-	log.Print("started new game server w/ pid = ", server.Process.Pid)
-	*/
 
 	response := request.NewGameServerResponse{registerData.MachineKey}
 
 	json, err := json.Marshal(&response)
 	if err != nil {
+
 		return 500, err.Error()
 	}
 
@@ -178,7 +187,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 		return 400, "Bad Request"
 	}
 
-	data.MachineId = registerData.MachineId
+	data.MachineKey = registerData.MachineKey
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&data)
@@ -188,7 +197,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 		return 500, "Internal Server Error"
 	}
 
-	endpoint := fmt.Sprintf("http://52.25.124.72:6960/games/%s/register_server", params["id"])
+	endpoint := fmt.Sprintf("%s/games/register_server", masterEndpoint)
 	var req *http.Request
 	req, err = http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {
@@ -197,7 +206,6 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 		return 500, "Internal Server Error"
 	}
 
-	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	var resp *http.Response
 	resp, err = client.Do(req)
@@ -211,7 +219,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 	if resp.StatusCode != 200 {
 
 		log.Print("error: couldn't register game server with master")
-		return 500, "Internal Server Error"
+		return 400, "Bad Request"
 	}
 
 	return 200, "OK"

@@ -17,9 +17,9 @@ type NewGameServer struct {
 }
 
 type RegisterGameServer struct {
-	MachineId int `json:"machineId"`
-	GameId    int `json:"gameId"`
-	Port      int `json:"gameListenPort"`
+	MachineKey string `json:"machineKey"`
+	GameId     int    `json:"gameId"`
+	Port       int    `json:"gameListenPort"`
 }
 
 type RegisterMachine struct {
@@ -27,7 +27,7 @@ type RegisterMachine struct {
 }
 
 type UnregisterMachine struct {
-	MachineKey string `json:"machineToken"`
+	MachineKey string `json:"machineKey"`
 }
 
 type MachineStatus struct {
