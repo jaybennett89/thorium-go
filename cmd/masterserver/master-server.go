@@ -383,26 +383,25 @@ func handleRegisterServer(httpReq *http.Request, params martini.Params) (int, st
 	var req request.RegisterGameServer
 	err := decoder.Decode(&req)
 	if err != nil {
+
 		logerr("Error decoding machine register request", err)
 		return 500, "Internal Server Error"
 	}
 
-	// todo: validate the machine key
 	if req.Port == 0 {
+
 		fmt.Println("No Port Given")
 		return 400, "Missing Parameters"
 	}
-	/* todo: store active game record
-	registered, err := thordb.RegisterActiveGame(gameId, req.MachineKey, req.Port)
-	if err != nil || !registered {
-		logerr("unable to register game", err)
+
+	err = thordb.RegisterActiveGame(req.GameId, req.MachineKey, req.Port)
+	if err != nil {
+
+		fmt.Println(err)
 		return 500, "Internal Server Error"
 	}
 
-	fmt.Println("Found game ", gameId)
-	*/
 	return 200, "OK"
-
 }
 
 func handleMachineHeartbeat(httpReq *http.Request) (int, string) {

@@ -101,10 +101,6 @@ func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers
 		return 0, err
 	}
 
-	if err != nil {
-		return 0, err
-	}
-
 	machineList, err := GetMachineList()
 	if err != nil {
 
@@ -185,24 +181,45 @@ func CreateNewGame(mapName string, gameMode string, minimumLevel int, maxPlayers
 	return gameId, nil
 }
 
-func RegisterActiveGame(game_id int, machine_key string, port int) (bool, error) {
+func RegisterActiveGame(gameId int, machineKey string, listenPort int) error {
 
-	// todo: read machine id from key and validate it
-	machine_id := 1
-
-	res, err := db.Exec("INSERT INTO game_servers (game_id, machine_id, port) VALUES ($1, $2, $3)", game_id, machine_id, port)
+	machineId, err := readMachineKey(machineKey)
 	if err != nil {
-		return false, err
+
+		return err
 	}
 
-	var rows int64
-	rows, err = res.RowsAffected()
+	tx, err := db.Begin()
 	if err != nil {
-		return false, err
+
+		return err
 	}
 
-	exists := rows > 0
-	return exists, err
+	_, err = tx.Exec("DELETE FROM loading_hosts WHERE game_id = $1 AND machine_id = $2", gameId, machineId)
+	if err != nil {
+
+		return err
+	}
+
+	_, err = tx.Exec("INSERT INTO hosts (game_id, machine_id, port) VALUES ( $1, $2, $3 )", gameId, machineId, listenPort)
+	if err != nil {
+
+		err = tx.Rollback()
+		if err != nil {
+
+			return err
+		}
+
+		return err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+
+		return err
+	}
+
+	return nil
 }
 
 func RegisterAccount(username string, password string) (string, []int, error) {
@@ -515,6 +532,29 @@ func validateToken(token_str string) (int, error) {
 	} else {
 		return 0, errors.New("thordb: invalid session")
 	}
+}
+
+func readMachineKey(machineKey string) (machineId int, err error) {
+
+	token, err := jwt.Parse(machineKey, func(t *jwt.Token) (interface{}, error) {
+		return verifyKey, nil
+	})
+
+	if err != nil {
+
+		return 0, err
+	}
+
+	var rawId float64
+	rawId, ok := token.Claims["machineId"].(float64)
+	if !ok {
+
+		return 0, errors.New("thordb: invalid machine key")
+	}
+
+	machineId = int(rawId)
+
+	return machineId, nil
 }
 
 func CreateCharacter(sessionKey string, name string, classId int) (int, error) {
