@@ -44,13 +44,13 @@ CREATE TABLE "machines_metadata" (
 
 CREATE TABLE "loading_hosts" (
 	"game_id" SERIAL PRIMARY KEY references games(game_id) DEFERRABLE INITIALLY DEFERRED,
-	"machine_id" SERIAL references machines(machine_id),
+	"machine_id" SERIAL references machines(machine_id) ON DELETE CASCADE,
 	"kickoff_time" TIMESTAMP
 );
 
 CREATE TABLE "hosts" (
 	"game_id" SERIAL PRIMARY KEY references games(game_id),
-	"machine_id" SERIAL references machines(machine_id),
+	"machine_id" SERIAL references machines(machine_id) ON DELETE CASCADE,
 	"port" INTEGER
 );
 

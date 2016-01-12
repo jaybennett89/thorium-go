@@ -237,3 +237,17 @@ func CreateNewGame(masterEndpoint string, sessionKey string, mapName string, gam
 	body, _ := ioutil.ReadAll(resp.Body)
 	return resp.StatusCode, string(body), nil
 }
+
+func GetServerInfo(masterEndpoint string, gameId int) (int, string, error) {
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://%s/games/%d/server_info", masterEndpoint, gameId), bytes.NewBuffer([]byte("")))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Print("Error with request: ", err)
+		return 0, "", err
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	return resp.StatusCode, string(body), nil
+}

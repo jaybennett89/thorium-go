@@ -59,6 +59,12 @@ type Machine struct {
 	MachineKey    string `json:"machineKey"`
 }
 
+type HostServer struct {
+	GameId        int    `json:"gameId"`
+	RemoteAddress string `json:"remoteAddress"`
+	ListenPort    int    `json:"listenPort"`
+}
+
 func NewCharacter() *Character {
 
 	var character Character

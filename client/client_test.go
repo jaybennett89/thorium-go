@@ -223,6 +223,7 @@ func Test4B_CreateNewGame(t *testing.T) {
 
 	rc, body, err := CreateNewGame(masterEndpoint, sessionKey, mapName, mode, minimumLevel, maxPlayers)
 	if err != nil {
+
 		log.Print(err)
 		t.FailNow()
 	}
@@ -230,10 +231,63 @@ func Test4B_CreateNewGame(t *testing.T) {
 	fmt.Printf("new game response: status %d, %s\n", rc, body)
 
 	if rc != 202 { // HTTP 202 Created
+
 		log.Print("failed to create game")
 		t.FailNow()
 	}
 
+	var data request.CreateNewGameResponse
+	err = json.Unmarshal([]byte(body), &data)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	if data.GameId == 0 {
+
+		log.Print("bad response - gameId is 0")
+		t.FailNow()
+	}
+
+	tries := 10
+
+	for tries > 0 {
+
+		rc, body, err := GetServerInfo(masterEndpoint, data.GameId)
+		if err != nil {
+
+			log.Print(err)
+			t.FailNow()
+		}
+
+		fmt.Printf("get server info response: status %d, %s\n", rc, body)
+
+		if rc == 200 {
+
+			log.Print("game server ready")
+			break
+
+		} else if rc == 202 {
+
+			log.Print("game server loading...")
+
+		} else {
+
+			log.Print("game server unavailable")
+			t.FailNow()
+		}
+
+		tries = tries - 1
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	if tries == 0 {
+
+		log.Print("server is not ready after 10 tries")
+		t.FailNow()
+
+	}
 }
 
 // Test 4C: Join Existing Game

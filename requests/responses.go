@@ -18,7 +18,7 @@ type MachineRegisterResponse struct {
 
 type ServerInfoResponse struct {
 	RemoteAddress string `json:"remoteAddress"`
-	Port          int    `json:"port"`
+	ListenPort    int    `json:"listenPort"`
 }
 
 type GetGamesResponse struct {

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"thorium-go/model"
 	"thorium-go/requests"
+	"time"
 
 	"github.com/go-martini/martini"
 )
@@ -38,6 +39,8 @@ func main() {
 	data.Port = listenPort
 	data.GameId = game.GameId
 	jsonBytes, err := json.Marshal(&data)
+
+	time.Sleep(1500 * time.Millisecond)
 
 	endpoint := fmt.Sprintf("http://localhost:%d/games/register_server", servicePort)
 	var req *http.Request

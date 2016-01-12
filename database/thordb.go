@@ -597,31 +597,46 @@ func CreateCharacter(sessionKey string, name string, classId int) (int, error) {
 	return id, nil
 }
 
-func GetServerInfo(game_id int) (string, int, error) {
+func GetServerInfo(gameId int) (*model.HostServer, bool, error) {
 
-	var count int
-	err := db.QueryRow("SELECT count(*) from games WHERE game_id = $1", game_id).Scan(&count)
-	if err != nil {
-		return "", 0, err
+	// return model, true, nil if game exists and server is registered
+	// return nil, false, nil if game exists but server is not loaded yet
+	// return err otherwise
+
+	var host model.HostServer
+
+	err := db.QueryRow("SELECT remote_address, port FROM games JOIN hosts USING (game_id) JOIN machines USING (machine_id) WHERE game_id = $1", gameId).Scan(&host.RemoteAddress, &host.ListenPort)
+	switch {
+
+	// if game is not found in hosts then check loading_hosts too
+	case err == sql.ErrNoRows:
+
+		var kickoff time.Time
+		err := db.QueryRow("SELECT kickoff_time FROM loading_hosts WHERE game_id = $1", gameId).Scan(&kickoff)
+		switch {
+
+		case err == sql.ErrNoRows:
+
+			return nil, false, GameNotExistError
+
+		case err != nil:
+
+			return nil, false, err
+
+		}
+
+		// todo: compare kickoff time to current time and reprovision if elapsed time
+		// is greater than a wait threshold constant
+
+		return nil, false, nil
+
+	case err != nil:
+
+		return nil, false, err
 	}
 
-	if count == 0 {
-		// game doesnt exist
-		return "", 0, errors.New("thordb: does not exist")
-	}
-
-	var (
-		address string
-		port    int
-	)
-
-	err = db.QueryRow("SELECT remote_address, port from game_servers JOIN machines USING (machine_id) WHERE game_id = $1", game_id).Scan(&address, &port)
-	if err != nil {
-		log.Print(err)
-		return "", 0, errors.New("thordb: game not available yet")
-	}
-
-	return address, port, nil
+	host.GameId = gameId
+	return &host, true, nil
 }
 
 func GetCharacter(id int) (*model.Character, error) {
