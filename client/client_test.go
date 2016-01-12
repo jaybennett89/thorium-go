@@ -279,7 +279,7 @@ func Test4B_CreateNewGame(t *testing.T) {
 		}
 
 		tries = tries - 1
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	if tries == 0 {
