@@ -374,7 +374,7 @@ func handleNewGameRequest(httpReq *http.Request) (int, string) {
 	}
 
 	fmt.Println("[ThoriumNET] new game, id=", strconv.Itoa(gameId))
-	return 202, string(bytes)
+	return 201, string(bytes)
 }
 
 func handleRegisterServer(httpReq *http.Request, params martini.Params) (int, string) {

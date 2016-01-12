@@ -230,7 +230,7 @@ func Test4B_CreateNewGame(t *testing.T) {
 
 	fmt.Printf("new game response: status %d, %s\n", rc, body)
 
-	if rc != 202 { // HTTP 202 Created
+	if rc != 201 { // HTTP 201 Created
 
 		log.Print("failed to create game")
 		t.FailNow()
