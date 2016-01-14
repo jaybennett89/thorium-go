@@ -17,10 +17,12 @@ import (
 func main() {
 	log.Print("running a mock game server")
 
-	var game model.Game
+	var key string
 	var listenPort int
 	var servicePort int
+	var game model.Game
 
+	flag.StringVar(&key, "key", "", "machine key")
 	flag.IntVar(&game.GameId, "id", 0, "identifies this game within the cluster")
 	flag.IntVar(&listenPort, "listen", 0, "game server listen port")
 	flag.IntVar(&servicePort, "service", 0, "machine local service port")
@@ -36,6 +38,7 @@ func main() {
 	}
 
 	var data request.RegisterGameServer
+	data.MachineKey = key
 	data.Port = listenPort
 	data.GameId = game.GameId
 	jsonBytes, err := json.Marshal(&data)

@@ -158,7 +158,7 @@ func handlePostNewGame(httpReq *http.Request, params martini.Params) (int, strin
 		return 400, err.Error() // okay to send err back to master
 	}
 
-	err = gameserver.NewGameServer(listenPort, data.GameId, data.Map, data.Mode, data.MinimumLevel, data.MaximumPlayers)
+	err = gameserver.NewGameServer(registerData.MachineKey, listenPort, data.GameId, data.Map, data.Mode, data.MinimumLevel, data.MaximumPlayers)
 	if err != nil {
 
 		log.Print(err)
@@ -187,7 +187,12 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 		return 400, "Bad Request"
 	}
 
-	data.MachineKey = registerData.MachineKey
+	if data.MachineKey != registerData.MachineKey {
+
+		log.Print("WARNING: Received invalid key trying to register local gameserver")
+		log.Printf("have %s recv %s", registerData.MachineKey, data.MachineKey)
+		return 403, "Invalid Key"
+	}
 
 	var jsonBytes []byte
 	jsonBytes, err = json.Marshal(&data)

@@ -19,7 +19,7 @@ var list []GameServerProcess = make([]GameServerProcess, 0)
 var program string = "bin/example-gameserver"
 var baseListenPort int = 12690
 
-func NewGameServer(servicePort int, gameId int, mapName string, mode string, minLevel int, maxPlayers int) error {
+func NewGameServer(machineKey string, servicePort int, gameId int, mapName string, mode string, minLevel int, maxPlayers int) error {
 
 	log.Printf("Starting new game server (gameId %d, map %s, mode %s, minLevel %d, maxPlayers %d", gameId, mapName, mode, minLevel, maxPlayers)
 
@@ -27,6 +27,7 @@ func NewGameServer(servicePort int, gameId int, mapName string, mode string, min
 
 	cmd := exec.Command(
 		program,
+		"-key", machineKey,
 		"-id", strconv.Itoa(gameId),
 		"-listen", strconv.Itoa(listenPort),
 		"-service", strconv.Itoa(servicePort),
