@@ -216,7 +216,7 @@ func Test4B_CreateNewGame(t *testing.T) {
 
 	fmt.Println("Test4B: Create New Game")
 
-	mapName := "Map_Sandbox"
+	mapName := "mp_sandbox"
 	mode := "Tutorial"
 	minimumLevel := 1
 	maxPlayers := 16
@@ -250,7 +250,7 @@ func Test4B_CreateNewGame(t *testing.T) {
 		t.FailNow()
 	}
 
-	tries := 10
+	tries := 50
 
 	for tries > 0 {
 

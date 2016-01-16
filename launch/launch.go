@@ -3,6 +3,7 @@ package launch
 import (
 	"log"
 	"strconv"
+	"thorium-go/cmd/host-server/hostconf"
 	"thorium-go/model"
 )
 import "os"
@@ -16,7 +17,6 @@ type GameServerProcess struct {
 }
 
 var list []GameServerProcess = make([]GameServerProcess, 0)
-var program string = "bin/example-gameserver"
 var baseListenPort int = 12690
 
 func NewGameServer(machineKey string, servicePort int, gameId int, mapName string, mode string, minLevel int, maxPlayers int) error {
@@ -26,7 +26,7 @@ func NewGameServer(machineKey string, servicePort int, gameId int, mapName strin
 	listenPort := baseListenPort + len(list)
 
 	cmd := exec.Command(
-		program,
+		hostconf.GameserverBinaryPath(),
 		"-key", machineKey,
 		"-id", strconv.Itoa(gameId),
 		"-listen", strconv.Itoa(listenPort),
@@ -63,7 +63,7 @@ func NewGameServer(machineKey string, servicePort int, gameId int, mapName strin
 
 	gameServer := GameServerProcess{
 
-		ApplicationName: program,
+		ApplicationName: hostconf.GameserverBinaryPath(),
 		Game:            &game,
 		Process:         cmd.Process,
 		ListenPort:      listenPort,
