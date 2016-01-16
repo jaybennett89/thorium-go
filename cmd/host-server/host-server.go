@@ -12,7 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	"thorium-go/gameserver"
+	"thorium-go/launch"
 	"thorium-go/requests"
 	"thorium-go/usage"
 	"time"
@@ -158,7 +158,7 @@ func handlePostNewGame(httpReq *http.Request, params martini.Params) (int, strin
 		return 400, err.Error() // okay to send err back to master
 	}
 
-	err = gameserver.NewGameServer(registerData.MachineKey, listenPort, data.GameId, data.Map, data.Mode, data.MinimumLevel, data.MaximumPlayers)
+	err = launch.NewGameServer(registerData.MachineKey, listenPort, data.GameId, data.Map, data.Mode, data.MinimumLevel, data.MaximumPlayers)
 	if err != nil {
 
 		log.Print(err)
