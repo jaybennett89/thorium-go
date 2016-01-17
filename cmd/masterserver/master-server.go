@@ -31,7 +31,7 @@ func main() {
 
 	// characters
 	m.Post("/characters/new", handleCreateCharacter)
-	m.Get("/characters/select", handleSelectCharacter)
+	m.Post("/characters/select", handleSelectCharacter)
 	m.Get("/characters/:id/profile", handleGetCharProfile)
 
 	// games

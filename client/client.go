@@ -178,7 +178,7 @@ func SelectCharacter(masterEndpoint string, sessionKey string, characterId int) 
 	}
 
 	url := fmt.Sprintf("http://%s/characters/select", masterEndpoint)
-	req, err := http.NewRequest("GET", url, bytes.NewBuffer(json))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
