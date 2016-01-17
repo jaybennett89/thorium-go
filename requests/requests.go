@@ -47,3 +47,8 @@ type CreateCharacter struct {
 	Name       string `json:"name"`
 	ClassId    int    `json:"classId"`
 }
+
+type SelectCharacter struct {
+	SessionKey  string `json:"sessionKey"`
+	CharacterId int    `json:"characterId"`
+}

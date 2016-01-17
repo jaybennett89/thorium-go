@@ -639,14 +639,19 @@ func GetServerInfo(gameId int) (*model.HostServer, bool, error) {
 	return &host, true, nil
 }
 
-func GetCharacter(id int) (*model.Character, error) {
+func SelectCharacter(sessionKey string, characterId int) (*model.Character, error) {
+
+	uid, err := validateToken(sessionKey)
+	if err != nil {
+		return nil, err
+	}
 
 	var character model.Character
-	character.CharacterId = id
+	character.CharacterId = characterId
 
 	var gameData string
 
-	err := db.QueryRow("SELECT name, last_game_id, game_data FROM characters WHERE id = $1", id).Scan(&character.Name, &character.LastGameId, &gameData)
+	err = db.QueryRow("SELECT name, last_game_id, game_data FROM characters WHERE id = $1 AND uid = $2", characterId, uid).Scan(&character.Name, &character.LastGameId, &gameData)
 	if err != nil {
 		return nil, err
 	}

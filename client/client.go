@@ -164,10 +164,21 @@ func CreateCharacter(masterEndpoint string, sessionKey string, name string, clas
 	return resp.StatusCode, string(body), nil
 }
 
-func GetCharacter(masterEndpoint string, characterId int) (int, string, error) {
+func SelectCharacter(masterEndpoint string, sessionKey string, characterId int) (int, string, error) {
 
-	url := fmt.Sprintf("http://%s/characters/%d", masterEndpoint, characterId)
-	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
+	selectCharacter := request.SelectCharacter{
+
+		SessionKey:  sessionKey,
+		CharacterId: characterId,
+	}
+
+	json, err := json.Marshal(&selectCharacter)
+	if err != nil {
+		return 0, "", err
+	}
+
+	url := fmt.Sprintf("http://%s/characters/select", masterEndpoint)
+	req, err := http.NewRequest("GET", url, bytes.NewBuffer(json))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

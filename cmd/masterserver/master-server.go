@@ -31,7 +31,7 @@ func main() {
 
 	// characters
 	m.Post("/characters/new", handleCreateCharacter)
-	m.Get("/characters/:id", handleGetCharacter)
+	m.Get("/characters/select", handleSelectCharacter)
 	m.Get("/characters/:id/profile", handleGetCharProfile)
 
 	// games
@@ -205,17 +205,17 @@ func handleCreateCharacter(httpReq *http.Request) (int, string) {
 	return 200, string(jsonBytes)
 }
 
-func handleGetCharacter(httpReq *http.Request, params martini.Params) (int, string) {
+func handleSelectCharacter(httpReq *http.Request) (int, string) {
 
-	// parse character id
-	id, err := strconv.Atoi(params["id"])
+	var req request.SelectCharacter
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
 	if err != nil {
+		log.Print("character select req json decoding error %s", httpReq.Body)
 		return 400, "Bad Request"
 	}
 
-	// search database for character data
-	fmt.Println("searching database for character ", id)
-	character, err := thordb.GetCharacter(id)
+	character, err := thordb.SelectCharacter(req.SessionKey, req.CharacterId)
 	if err != nil {
 		fmt.Println(err)
 		return 500, "Internal Server Error"

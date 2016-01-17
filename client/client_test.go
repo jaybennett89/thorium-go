@@ -173,17 +173,15 @@ func Test3B_GetCharacter(t *testing.T) {
 		t.FailNow()
 	}
 
-	for i := 0; i < count; i++ {
+	// pick the first character
+	rc, body, err := SelectCharacter(masterEndpoint, sessionKey, characterIds[0])
+	if err != nil {
+		t.FailNow()
+	}
 
-		rc, body, err := GetCharacter(masterEndpoint, characterIds[i])
-		if err != nil {
-			t.FailNow()
-		}
-
-		fmt.Printf("get character response: status %d, %s\n", rc, body)
-		if rc != 200 {
-			t.FailNow()
-		}
+	fmt.Printf("select character response: status %d, %s\n", rc, body)
+	if rc != 200 {
+		t.FailNow()
 	}
 }
 
