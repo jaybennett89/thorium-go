@@ -641,10 +641,12 @@ func GetServerInfo(gameId int) (*model.HostServer, bool, error) {
 
 func GetCharacter(id int) (*model.Character, error) {
 
-	var name string
+	var character model.Character
+	character.CharacterId = id
+
 	var gameData string
 
-	err := db.QueryRow("SELECT name, game_data FROM characters WHERE id = $1", id).Scan(&name, &gameData)
+	err := db.QueryRow("SELECT name, last_game_id, game_data FROM characters WHERE id = $1", id).Scan(&character.Name, &character.LastGameId, &gameData)
 	if err != nil {
 		return nil, err
 	}
@@ -655,9 +657,6 @@ func GetCharacter(id int) (*model.Character, error) {
 		return nil, err
 	}
 
-	var character model.Character
-	character.Name = name
-	character.CharacterId = id
 	character.CharacterState = state
 
 	return &character, nil

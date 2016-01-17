@@ -10,6 +10,7 @@ type Account struct {
 type Character struct {
 	CharacterId    int    `json:"characterId"`
 	Name           string `json:"name"`
+	LastGameId     int    `json:"lastGameId"`
 	CharacterState `json:"characterState"`
 }
 
