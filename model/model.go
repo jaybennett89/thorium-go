@@ -7,24 +7,26 @@ type Account struct {
 	CharacterIds []int  `json:"characterIds"`
 }
 
-type Character struct {
-	CharacterId    int    `json:"characterId"`
-	Name           string `json:"name"`
-	LastGameId     int    `json:"lastGameId"`
-	CharacterState `json:"characterState"`
+type Machine struct {
+	MachineId     int    `json:"machineId"`
+	RemoteAddress string `json:"remoteAddress"`
+	ListenPort    int    `json:"listenPort"`
+	MachineKey    string `json:"machineKey"`
 }
 
-type CharacterState struct {
-	ClassId        int     `json:"classId"`
-	BaseMeshId     int     `json:"baseMeshId"`
-	Position       Vector3 `json:"position"`
-	Alive          bool    `json:"alive"`
-	Health         Vital   `json:"health"`
-	Power          Vital   `json:"power"`
-	BaseMovespeed  float64 `json:"baseMovespeed"`
-	SelectedWeapon int     `json:"selectedWeapon"`
-	Weapons        []int   `json:"weapons"`
-	Inventory      []Item  `json:"inventory"`
+type HostServer struct {
+	GameId        int    `json:"gameId"`
+	RemoteAddress string `json:"remoteAddress"`
+	ListenPort    int    `json:"listenPort"`
+}
+
+type Game struct {
+	GameId         int    `json:"gameId"`
+	Map            string `json:"map"`
+	Mode           string `json:"mode"`
+	MinimumLevel   int    `json:"minimumLevel"`
+	PlayerCount    int    `json:"playerCount"`
+	MaximumPlayers int    `json:"maxPlayers"`
 }
 
 type Vector3 struct {
@@ -44,26 +46,31 @@ type Vital struct {
 	RegenRate float64 `json:"regenRate"`
 }
 
-type Game struct {
-	GameId         int    `json:"gameId"`
-	Map            string `json:"map"`
-	Mode           string `json:"mode"`
-	MinimumLevel   int    `json:"minimumLevel"`
-	PlayerCount    int    `json:"playerCount"`
-	MaximumPlayers int    `json:"maxPlayers"`
+type Character struct {
+	CharacterId    int    `json:"characterId"`
+	Name           string `json:"name"`
+	LastGameId     int    `json:"lastGameId"`
+	CharacterState `json:"characterState"`
 }
 
-type Machine struct {
-	MachineId     int    `json:"machineId"`
-	RemoteAddress string `json:"remoteAddress"`
-	ListenPort    int    `json:"listenPort"`
-	MachineKey    string `json:"machineKey"`
-}
-
-type HostServer struct {
-	GameId        int    `json:"gameId"`
-	RemoteAddress string `json:"remoteAddress"`
-	ListenPort    int    `json:"listenPort"`
+type CharacterState struct {
+	ClassId        int     `json:"classId"`
+	BaseMeshId     int     `json:"baseMeshId"`
+	Alive          bool    `json:"alive"`
+	Position       Vector3 `json:"position"`
+	FacingDir      float64 `json:"facingDir"`
+	BaseMovespeed  float64 `json:"baseMovespeed"`
+	Level          int     `json:"level"`
+	XP             int     `json:"xp"`
+	Team           int     `json:"team"`
+	Health         Vital   `json:"health"`
+	Energy         Vital   `json:"energy"`
+	Power          Vital   `json:"power"`
+	Armor          int     `json:"armor"`
+	Inventory      []Item  `json:"inventory"`
+	Weapons        []int   `json:"weapons"`
+	SelectedWeapon int     `json:"selectedWeapon"`
+	Stunned        bool    `json:"stunned"`
 }
 
 func NewCharacter() *Character {
@@ -80,13 +87,20 @@ func (c *Character) SetClassAttributes(classId int) {
 	c.ClassId = classId
 	c.BaseMeshId = 1
 	c.Alive = true
+	c.BaseMovespeed = 8
+	c.Level = 1
+	c.XP = 0
 	c.Health.Max = 100
 	c.Health.Current = 100
 	c.Health.RegenRate = 10
+	c.Energy.Max = 100
+	c.Energy.Current = 100
+	c.Energy.RegenRate = 20
 	c.Power.Current = 100
 	c.Power.Max = 100
 	c.Power.RegenRate = 30
-	c.BaseMovespeed = 8
+	c.Armor = 0
 	c.Weapons = append(c.Weapons, 1)
 	c.SelectedWeapon = 0
+	c.Stunned = false
 }
