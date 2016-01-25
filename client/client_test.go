@@ -1,10 +1,12 @@
 package client
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"testing"
 	"thorium-go/model"
 	"thorium-go/requests"
@@ -15,6 +17,9 @@ var masterEndpoint = "thorium-sky.net:6960"
 var sessionKey string
 var characterIds []int
 var gameList []model.Game
+var gameId int
+var gameServerAddress string
+var gameServerPort int
 
 var user string = "test"
 var password string = "test"
@@ -162,9 +167,9 @@ func Test3A_CreateCharacter(t *testing.T) {
 	fmt.Println("characterIds: ", characterIds)
 }
 
-// Test 3B: Get Character Info
+// Test 3B: Select Character
 
-func Test3B_GetCharacter(t *testing.T) {
+func Test3B_SelectCharacter(t *testing.T) {
 
 	fmt.Println("Test3B: Get Character Info")
 
@@ -264,6 +269,8 @@ func Test4B_CreateNewGame(t *testing.T) {
 		if rc == 200 {
 
 			log.Print("game server ready")
+
+			gameId = data.GameId
 			break
 
 		} else if rc == 202 {
@@ -289,3 +296,68 @@ func Test4B_CreateNewGame(t *testing.T) {
 }
 
 // Test 4C: Join Existing Game
+func Test4C_JoinGame(t *testing.T) {
+
+	fmt.Println("Test4C: Join Game")
+
+	rc, body, err := JoinGame(masterEndpoint, gameId, sessionKey)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	if rc != 200 {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	var resp request.JoinGameResponse
+	err = json.Unmarshal([]byte(body), &resp)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	log.Printf("connect to %s:%d\n", resp.RemoteAddress, resp.ListenPort)
+
+	gameServerAddress = resp.RemoteAddress
+	gameServerPort = resp.ListenPort
+}
+
+// Test 4D: Connect to Game Server
+func Test4D_ConnectToGame(t *testing.T) {
+
+	fmt.Println("Test4D: Connect to Game")
+
+	// assume we are connecting to example-gameserver
+	// this server is an HTTP listen server
+	// which simulates a long lived connection
+	// on the endpoint POST http://address:port/connect
+
+	url := fmt.Sprintf("http://%s:%d/connect", gameServerAddress, gameServerPort)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte("")))
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	c := &http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	if resp.StatusCode != 200 {
+
+		log.Print("game server denied request. status ", resp.StatusCode)
+		t.FailNow()
+	}
+
+	fmt.Println("Test 4D: Pass")
+}

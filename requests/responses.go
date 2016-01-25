@@ -32,3 +32,8 @@ type CreateNewGameResponse struct {
 type NewGameServerResponse struct {
 	MachineKey string `json:"machineKey"`
 }
+
+type JoinGameResponse struct {
+	RemoteAddress string `json:"remoteAddress"`
+	ListenPort    int    `json:"listenPort"`
+}

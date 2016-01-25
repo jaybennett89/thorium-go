@@ -667,6 +667,121 @@ func SelectCharacter(sessionKey string, characterId int) (*model.Character, erro
 	return &character, nil
 }
 
+func JoinGameRequest(gameId int, sessionKey string) (*model.HostServer, error) {
+
+	userId, err := validateToken(sessionKey)
+	if err != nil {
+
+		return nil, err
+	}
+
+	var host model.HostServer
+	var playerCount int
+	var maxPlayers int
+
+	err = db.QueryRow("SELECT player_count, maximum_players, remote_address, port FROM games JOIN hosts USING (game_id) JOIN machines USING (machine_id) WHERE game_id = $1", gameId).Scan(&playerCount, &maxPlayers, &host.RemoteAddress, &host.ListenPort)
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, errors.New("thordb: game does not exist")
+	case err != nil:
+		log.Print(err)
+		return nil, err
+	}
+
+	var pendingCount int
+	err = db.QueryRow("SELECT count(*) FROM pending_players WHERE game_id = $1", gameId).Scan(&pendingCount)
+	if err != nil {
+
+		return nil, err
+	}
+
+	if playerCount+pendingCount >= maxPlayers {
+		return nil, errors.New("thordb: game is full")
+	}
+
+	_, err = db.Exec("INSERT INTO pending_players (user_id, game_id) VALUES ( $1, $2 )", userId, gameId)
+	if err != nil {
+
+		return nil, err
+	}
+
+	return &host, nil
+}
+
+func GetCharacter(machineKey string, characterId int) (*model.Character, error) {
+
+	machineId, err := readMachineKey(machineKey)
+	if err != nil {
+
+		return nil, err
+	}
+
+	var realMachineKey string
+	err = db.QueryRow("SELECT machine_key FROM machines WHERE machine_id = $1", machineId).Scan(&realMachineKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if machineKey != realMachineKey {
+
+		return nil, errors.New("thordb: invalid machine key")
+	}
+
+	var character model.Character
+	character.CharacterId = characterId
+
+	var gameData string
+
+	err = db.QueryRow("SELECT name, last_game_id, game_data FROM characters WHERE id = $1", characterId).Scan(&character.Name, &character.LastGameId, &gameData)
+	if err != nil {
+		return nil, err
+	}
+
+	var state model.CharacterState
+	err = json.Unmarshal([]byte(gameData), &state)
+	if err != nil {
+		return nil, err
+	}
+
+	character.CharacterState = state
+
+	return &character, nil
+}
+
+func UpdateCharacter(machineKey string, character *model.Character) error {
+
+	machineId, err := readMachineKey(machineKey)
+	if err != nil {
+
+		return err
+	}
+
+	var realMachineKey string
+	err = db.QueryRow("SELECT machine_key FROM machines WHERE machine_id = $1", machineId).Scan(&realMachineKey)
+	if err != nil {
+		return err
+	}
+
+	if machineKey != realMachineKey {
+
+		return errors.New("invalid machine key")
+	}
+
+	json, err := json.Marshal(&character.CharacterState)
+	if err != nil {
+
+		return err
+	}
+
+	_, err = db.Exec("UPDATE characters SET last_game_id = $1, game_data = $2 WHERE id = $3", character.LastGameId, string(json), character.CharacterId)
+	if err != nil {
+
+		return err
+	}
+
+	return nil
+}
+
 func GetGamesList() ([]model.Game, error) {
 
 	rows, err := db.Query("SELECT * FROM games")

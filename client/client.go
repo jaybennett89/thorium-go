@@ -262,3 +262,33 @@ func GetServerInfo(masterEndpoint string, gameId int) (int, string, error) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	return resp.StatusCode, string(body), nil
 }
+
+func JoinGame(masterEndpoint string, gameId int, sessionKey string) (int, string, error) {
+
+	data := request.JoinGame{
+		GameId:     gameId,
+		SessionKey: sessionKey}
+
+	json, err := json.Marshal(&data)
+	if err != nil {
+
+		return 0, "", err
+	}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/games/join", masterEndpoint), bytes.NewBuffer(json))
+	if err != nil {
+
+		return 0, "", err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+
+		return 0, "", err
+	}
+
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	return resp.StatusCode, string(body), nil
+}

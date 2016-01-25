@@ -68,9 +68,15 @@ func main() {
 
 	m := martini.Classic()
 	m.Get("/status", handleStatusRequest)
+	m.Post("/connect", handleConnectRequest)
 	m.RunOnAddr(fmt.Sprintf(":%d", listenPort))
 }
 
 func handleStatusRequest(httpReq *http.Request) (int, string) {
+	return 200, "OK"
+}
+
+func handleConnectRequest(httpReq *http.Request) (int, string) {
+
 	return 200, "OK"
 }

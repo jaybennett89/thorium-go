@@ -33,6 +33,8 @@ func main() {
 	m.Post("/characters/new", handleCreateCharacter)
 	m.Post("/characters/select", handleSelectCharacter)
 	m.Get("/characters/:id/profile", handleGetCharProfile)
+	m.Get("/characters", handleGetCharacter)
+	m.Post("/characters", handleUpdateCharacter)
 
 	// games
 	m.Post("/games/register_server", handleRegisterServer)
@@ -229,12 +231,81 @@ func handleSelectCharacter(httpReq *http.Request) (int, string) {
 	return 200, string(json)
 }
 
+func handleGetCharacter(httpReq *http.Request) (int, string) {
+
+	var req request.GetCharacter
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Print("character select req json decoding error %s", httpReq.Body)
+		return 400, "Bad Request"
+	}
+
+	character, err := thordb.GetCharacter(req.MachineKey, req.CharacterId)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	json, err := json.Marshal(&character)
+	if err != nil {
+		return 500, "Internal Server Error"
+	}
+
+	return 200, string(json)
+}
+
+func handleUpdateCharacter(httpReq *http.Request) (int, string) {
+
+	var req request.UpdateCharacter
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Print("character select req json decoding error %s", httpReq.Body)
+		return 400, "Bad Request"
+	}
+
+	err = thordb.UpdateCharacter(req.MachineKey, req.Snapshot)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, "OK"
+}
+
 func handleGetCharProfile(httpReq *http.Request) (int, string) {
 	return 500, "Not Implemented"
 }
 
 func handleClientJoinGame(httpReq *http.Request) (int, string) {
-	return 500, "Not Implemented"
+
+	var req request.JoinGame
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Print("join game req json decoding error %s", httpReq.Body)
+		return 400, "Bad Request"
+	}
+
+	host, err := thordb.JoinGameRequest(req.GameId, req.SessionKey)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	resp := request.JoinGameResponse{
+		RemoteAddress: host.RemoteAddress,
+		ListenPort:    host.ListenPort}
+
+	bytes, err := json.Marshal(&resp)
+	if err != nil {
+
+		log.Print(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, string(bytes)
 }
 
 func handleClientJoinQueue(httpReq *http.Request) (int, string) {

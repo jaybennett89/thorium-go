@@ -1,5 +1,7 @@
 package request
 
+import "thorium-go/model"
+
 type CreateNewGame struct {
 	SessionKey   string `json:"sessionKey"`
 	Map          string `json:"map"`
@@ -51,4 +53,19 @@ type CreateCharacter struct {
 type SelectCharacter struct {
 	SessionKey  string `json:"sessionKey"`
 	CharacterId int    `json:"characterId"`
+}
+
+type GetCharacter struct {
+	MachineKey  string `json:"machineKey"`
+	CharacterId int    `json:"characterId"`
+}
+
+type UpdateCharacter struct {
+	MachineKey string           `json:"machineKey"`
+	Snapshot   *model.Character `json:"snapshot"`
+}
+
+type JoinGame struct {
+	GameId     int    `json:"gameId"`
+	SessionKey string `json:"sessionKey"`
 }
