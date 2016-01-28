@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"thorium-go/client"
 	"thorium-go/launch"
 	"thorium-go/requests"
 	"thorium-go/usage"
@@ -25,7 +26,7 @@ import "github.com/go-martini/martini"
 var registerData request.MachineRegisterResponse
 var listenPort int
 
-var masterEndpoint string = "http://thorium-sky.net:6960"
+var masterEndpoint string = "thorium-sky.net:6960"
 
 func main() {
 	fmt.Println("hello world")
@@ -43,7 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	url := fmt.Sprintf("%s/machines/register", masterEndpoint)
+	url := fmt.Sprintf("http://%s/machines/register", masterEndpoint)
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		log.Fatal(err)
@@ -74,10 +75,14 @@ func main() {
 
 	m := martini.Classic()
 
+	// called by master
 	m.Get("/", handlePingRequest)
 	m.Get("/status", handlePingRequest)
 	m.Post("/games", handlePostNewGame)
+
+	// called by local gameservers
 	m.Post("/games/register_server", handleRegisterLocalServer)
+	m.Post("/games/player_connect", handlePlayerConnect)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
@@ -117,7 +122,7 @@ func sendHeartbeat() {
 		return
 	}
 
-	url := fmt.Sprintf("%s/machines/status", masterEndpoint)
+	url := fmt.Sprintf("http://%s/machines/status", masterEndpoint)
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 
@@ -176,6 +181,35 @@ func handlePostNewGame(httpReq *http.Request, params martini.Params) (int, strin
 	return 200, string(json)
 }
 
+func handlePlayerConnect(httpReq *http.Request) (int, string) {
+
+	var data request.PlayerConnect
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&data)
+	if err != nil {
+
+		fmt.Println(err)
+		return 400, "Bad Request"
+	}
+
+	if data.MachineKey != registerData.MachineKey {
+
+		log.Print("WARNING: Received invalid machine key during player connect")
+		log.Printf("have %s recv %s", registerData.MachineKey, data.MachineKey)
+		return 403, "Invalid Key"
+	}
+
+	rc, body, err := client.PlayerConnect(masterEndpoint, data.GameId, data.MachineKey, data.SessionKey, data.CharacterId)
+
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return rc, body
+}
+
 func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (int, string) {
 
 	decoder := json.NewDecoder(httpReq.Body)
@@ -202,7 +236,7 @@ func handleRegisterLocalServer(httpReq *http.Request, params martini.Params) (in
 		return 500, "Internal Server Error"
 	}
 
-	endpoint := fmt.Sprintf("%s/games/register_server", masterEndpoint)
+	endpoint := fmt.Sprintf("http://%s/games/register_server", masterEndpoint)
 	var req *http.Request
 	req, err = http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonBytes))
 	if err != nil {

@@ -321,10 +321,15 @@ func Test4C_JoinGame(t *testing.T) {
 		t.FailNow()
 	}
 
-	log.Printf("connect to %s:%d\n", resp.RemoteAddress, resp.ListenPort)
+	log.Printf("game server address:  %s:%d\n", resp.RemoteAddress, resp.ListenPort)
 
 	gameServerAddress = resp.RemoteAddress
 	gameServerPort = resp.ListenPort
+}
+
+type ConnectToken struct {
+	SessionKey  string `json:"sessionKey"`
+	CharacterId int    `json:"characterId"`
 }
 
 // Test 4D: Connect to Game Server
@@ -337,8 +342,19 @@ func Test4D_ConnectToGame(t *testing.T) {
 	// which simulates a long lived connection
 	// on the endpoint POST http://address:port/connect
 
+	token := ConnectToken{
+		SessionKey:  sessionKey,
+		CharacterId: characterIds[0]}
+
+	json, err := json.Marshal(&token)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
 	url := fmt.Sprintf("http://%s:%d/connect", gameServerAddress, gameServerPort)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte("")))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
 	if err != nil {
 
 		log.Print(err)

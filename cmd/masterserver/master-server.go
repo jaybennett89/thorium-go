@@ -38,6 +38,8 @@ func main() {
 
 	// games
 	m.Post("/games/register_server", handleRegisterServer)
+	m.Post("/games/player_connect", handlePlayerConnect)
+
 	m.Post("/games/server_status", handleGameServerStatus)
 
 	m.Post("/games", handleNewGameRequest)
@@ -276,6 +278,34 @@ func handleUpdateCharacter(httpReq *http.Request) (int, string) {
 
 func handleGetCharProfile(httpReq *http.Request) (int, string) {
 	return 500, "Not Implemented"
+}
+
+func handlePlayerConnect(httpReq *http.Request) (int, string) {
+
+	var req request.PlayerConnect
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Print("join game req json decoding error %s", httpReq.Body)
+		return 400, "Bad Request"
+	}
+
+	character, err := thordb.PlayerConnect(req.GameId, req.MachineKey, req.SessionKey, req.CharacterId)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	resp := request.PlayerConnectResponse{Character: character}
+
+	bytes, err := json.Marshal(&resp)
+	if err != nil {
+
+		log.Print(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, string(bytes)
 }
 
 func handleClientJoinGame(httpReq *http.Request) (int, string) {

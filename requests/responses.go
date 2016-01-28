@@ -37,3 +37,7 @@ type JoinGameResponse struct {
 	RemoteAddress string `json:"remoteAddress"`
 	ListenPort    int    `json:"listenPort"`
 }
+
+type PlayerConnectResponse struct {
+	Character *model.Character `json:"character"`
+}

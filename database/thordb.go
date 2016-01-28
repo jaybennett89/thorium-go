@@ -32,6 +32,12 @@ const hkeyCharacterToken string = "characterToken"
 const hkeyCharacterData string = "characterData"
 const gameSessionKey string = "games/%d"
 
+// errors
+var ErrInvalidSessionKey = errors.New("thordb: invalid session key")
+var ErrInvalidMachineKey = errors.New("thordb: invalid machine key")
+var ErrGameNotExist = errors.New("thordb: game does not exist")
+var ErrGameFull = errors.New("thordb: game is full")
+
 var db *sql.DB
 var kvstore *redis.Client
 var signKey *rsa.PrivateKey
@@ -667,6 +673,69 @@ func SelectCharacter(sessionKey string, characterId int) (*model.Character, erro
 	return &character, nil
 }
 
+func PlayerConnect(gameId int, machineKey string, sessionKey string, characterId int) (*model.Character, error) {
+
+	machineId, valid, err := validateMachineKey(machineKey)
+	if err != nil {
+
+		return nil, err
+	}
+
+	if !valid {
+
+		return nil, ErrInvalidMachineKey
+	}
+
+	userId, err := validateToken(sessionKey)
+	if err != nil {
+
+		return nil, ErrInvalidSessionKey
+	}
+
+	var playerCount int
+	var maxPlayers int
+
+	err = db.QueryRow("SELECT player_count, maximum_players FROM games JOIN hosts USING (game_id) JOIN machines USING (machine_id) WHERE game_id = $1 AND machine_id = $2", gameId, machineId).Scan(&playerCount, &maxPlayers)
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, ErrGameNotExist
+	case err != nil:
+		log.Print(err)
+		return nil, err
+	}
+
+	if playerCount >= maxPlayers {
+		return nil, ErrGameFull
+	}
+
+	var character model.Character
+	character.CharacterId = characterId
+
+	var gameData string
+
+	err = db.QueryRow("SELECT name, last_game_id, game_data FROM characters WHERE id = $1 AND uid = $2", characterId, userId).Scan(&character.Name, &character.LastGameId, &gameData)
+	if err != nil {
+		return nil, err
+	}
+
+	var state model.CharacterState
+	err = json.Unmarshal([]byte(gameData), &state)
+	if err != nil {
+		return nil, err
+	}
+
+	character.CharacterState = state
+
+	// increment playercount
+	_, err = db.Exec("UPDATE games SET player_count = $1 WHERE game_id = $2", playerCount+1, gameId)
+	if err != nil {
+
+		return nil, err
+	}
+
+	return &character, nil
+}
+
 func JoinGameRequest(gameId int, sessionKey string) (*model.HostServer, error) {
 
 	userId, err := validateToken(sessionKey)
@@ -724,7 +793,7 @@ func GetCharacter(machineKey string, characterId int) (*model.Character, error) 
 
 	if machineKey != realMachineKey {
 
-		return nil, errors.New("thordb: invalid machine key")
+		return nil, ErrInvalidMachineKey
 	}
 
 	var character model.Character
@@ -852,4 +921,27 @@ func StoreCharacterSnapshot(charSession *CharacterSession) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func validateMachineKey(machineKey string) (machineId int, valid bool, err error) {
+
+	machineId, err = readMachineKey(machineKey)
+	if err != nil {
+
+		return
+	}
+
+	var realMachineKey string
+	err = db.QueryRow("SELECT most_recent_key FROM machines JOIN machines_metadata USING (machine_id) WHERE machine_id = $1", machineId).Scan(&realMachineKey)
+	if err != nil {
+
+		return
+	}
+
+	if machineKey != realMachineKey {
+
+		return 0, false, ErrInvalidMachineKey
+	}
+
+	return machineId, true, nil
 }

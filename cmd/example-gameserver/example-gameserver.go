@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"thorium-go/client"
 	"thorium-go/model"
 	"thorium-go/requests"
 	"time"
@@ -14,15 +15,15 @@ import (
 	"github.com/go-martini/martini"
 )
 
+var machineKey string
+var listenPort int
+var servicePort int
+var game model.Game
+
 func main() {
 	log.Print("running a mock game server")
 
-	var key string
-	var listenPort int
-	var servicePort int
-	var game model.Game
-
-	flag.StringVar(&key, "key", "", "machine key")
+	flag.StringVar(&machineKey, "key", "", "machine key")
 	flag.IntVar(&game.GameId, "id", 0, "identifies this game within the cluster")
 	flag.IntVar(&listenPort, "listen", 0, "game server listen port")
 	flag.IntVar(&servicePort, "service", 0, "machine local service port")
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	var data request.RegisterGameServer
-	data.MachineKey = key
+	data.MachineKey = machineKey
 	data.Port = listenPort
 	data.GameId = game.GameId
 	jsonBytes, err := json.Marshal(&data)
@@ -76,7 +77,37 @@ func handleStatusRequest(httpReq *http.Request) (int, string) {
 	return 200, "OK"
 }
 
+type ConnectToken struct {
+	SessionKey  string `json:"sessionKey"`
+	CharacterId int    `json:"characterId"`
+}
+
 func handleConnectRequest(httpReq *http.Request) (int, string) {
 
+	var req ConnectToken
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	serviceEndpoint := fmt.Sprintf("localhost:%d", servicePort)
+
+	rc, body, err := client.PlayerConnect(serviceEndpoint, game.GameId, machineKey, req.SessionKey, req.CharacterId)
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	if rc != 200 {
+
+		fmt.Println("status: ", rc, " body: ", body)
+		return 500, "Internal Server Error"
+	}
+
+	fmt.Println("instantiate player: ", body)
 	return 200, "OK"
 }
