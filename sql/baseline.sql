@@ -54,11 +54,6 @@ CREATE TABLE "hosts" (
 	"port" INTEGER
 );
 
-CREATE TABLE "pending_players" (
-	"user_id" INTEGER PRIMARY KEY references account_data(user_id),
-	"game_id" INTEGER references games(game_id)
-);
-
 CREATE FUNCTION get_available_machine()
 	RETURNS TABLE (
 		"remote_address" TEXT,

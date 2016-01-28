@@ -736,47 +736,6 @@ func PlayerConnect(gameId int, machineKey string, sessionKey string, characterId
 	return &character, nil
 }
 
-func JoinGameRequest(gameId int, sessionKey string) (*model.HostServer, error) {
-
-	userId, err := validateToken(sessionKey)
-	if err != nil {
-
-		return nil, err
-	}
-
-	var host model.HostServer
-	var playerCount int
-	var maxPlayers int
-
-	err = db.QueryRow("SELECT player_count, maximum_players, remote_address, port FROM games JOIN hosts USING (game_id) JOIN machines USING (machine_id) WHERE game_id = $1", gameId).Scan(&playerCount, &maxPlayers, &host.RemoteAddress, &host.ListenPort)
-	switch {
-	case err == sql.ErrNoRows:
-		return nil, errors.New("thordb: game does not exist")
-	case err != nil:
-		log.Print(err)
-		return nil, err
-	}
-
-	var pendingCount int
-	err = db.QueryRow("SELECT count(*) FROM pending_players WHERE game_id = $1", gameId).Scan(&pendingCount)
-	if err != nil {
-
-		return nil, err
-	}
-
-	if playerCount+pendingCount >= maxPlayers {
-		return nil, errors.New("thordb: game is full")
-	}
-
-	_, err = db.Exec("INSERT INTO pending_players (user_id, game_id) VALUES ( $1, $2 )", userId, gameId)
-	if err != nil {
-
-		return nil, err
-	}
-
-	return &host, nil
-}
-
 func GetCharacter(machineKey string, characterId int) (*model.Character, error) {
 
 	machineId, err := readMachineKey(machineKey)

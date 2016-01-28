@@ -270,6 +270,16 @@ func Test4B_CreateNewGame(t *testing.T) {
 
 			log.Print("game server ready")
 
+			var resp request.ServerInfoResponse
+			err := json.Unmarshal([]byte(body), &resp)
+			if err != nil {
+
+				log.Print(err)
+				t.FailNow()
+			}
+
+			gameServerAddress = resp.RemoteAddress
+			gameServerPort = resp.ListenPort
 			gameId = data.GameId
 			break
 
@@ -295,47 +305,15 @@ func Test4B_CreateNewGame(t *testing.T) {
 	}
 }
 
-// Test 4C: Join Existing Game
-func Test4C_JoinGame(t *testing.T) {
-
-	fmt.Println("Test4C: Join Game")
-
-	rc, body, err := JoinGame(masterEndpoint, gameId, sessionKey)
-	if err != nil {
-
-		log.Print(err)
-		t.FailNow()
-	}
-
-	if rc != 200 {
-
-		log.Print(err)
-		t.FailNow()
-	}
-
-	var resp request.JoinGameResponse
-	err = json.Unmarshal([]byte(body), &resp)
-	if err != nil {
-
-		log.Print(err)
-		t.FailNow()
-	}
-
-	log.Printf("game server address:  %s:%d\n", resp.RemoteAddress, resp.ListenPort)
-
-	gameServerAddress = resp.RemoteAddress
-	gameServerPort = resp.ListenPort
-}
-
 type ConnectToken struct {
 	SessionKey  string `json:"sessionKey"`
 	CharacterId int    `json:"characterId"`
 }
 
-// Test 4D: Connect to Game Server
-func Test4D_ConnectToGame(t *testing.T) {
+// Test 4C: Connect to Game Server
+func Test4C_ConnectToGame(t *testing.T) {
 
-	fmt.Println("Test4D: Connect to Game")
+	fmt.Println("Test4C: Connect to Game")
 
 	// assume we are connecting to example-gameserver
 	// this server is an HTTP listen server
@@ -375,5 +353,5 @@ func Test4D_ConnectToGame(t *testing.T) {
 		t.FailNow()
 	}
 
-	fmt.Println("Test 4D: Pass")
+	fmt.Println("Test 4C: Pass")
 }
