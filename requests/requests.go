@@ -76,3 +76,9 @@ type PlayerConnect struct {
 	SessionKey  string `json:"sessionKey"`
 	CharacterId int    `json:"characterId"`
 }
+
+type PlayerDisconnect struct {
+	GameId     int              `json:"gameId"`
+	MachineKey string           `json:"machineKey"`
+	Snapshot   *model.Character `json:"snapshot"`
+}

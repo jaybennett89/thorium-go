@@ -19,6 +19,7 @@ var machineKey string
 var listenPort int
 var servicePort int
 var game model.Game
+var players map[string]*model.Character
 
 func main() {
 	log.Print("running a mock game server")
@@ -65,11 +66,13 @@ func main() {
 		log.Fatal("Die - failed to register")
 	}
 
-	// todo: service heartbeat and client hearbeat listener
+	players = make(map[string]*model.Character)
 
 	m := martini.Classic()
 	m.Get("/status", handleStatusRequest)
 	m.Post("/connect", handleConnectRequest)
+	m.Post("/move", handleMoveRequest)
+	m.Post("/disconnect", handleDisconnect)
 	m.RunOnAddr(fmt.Sprintf(":%d", listenPort))
 }
 
@@ -108,6 +111,85 @@ func handleConnectRequest(httpReq *http.Request) (int, string) {
 		return 500, "Internal Server Error"
 	}
 
+	var resp request.PlayerConnectResponse
+	err = json.Unmarshal([]byte(body), &resp)
+
+	players[req.SessionKey] = resp.Character
+
 	fmt.Println("instantiate player: ", body)
+	return 200, "OK"
+}
+
+type Move struct {
+	SessionKey string        `json:"sessionKey"`
+	MoveDir    model.Vector3 `json:"movedir"`
+}
+
+// this method is for testing only! not a real game server!!
+func handleMoveRequest(httpReq *http.Request) (int, string) {
+
+	var req Move
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	players[req.SessionKey].Position.X += req.MoveDir.X
+	players[req.SessionKey].Position.Y += req.MoveDir.Y
+	players[req.SessionKey].Position.Z += req.MoveDir.Z
+
+	// for testing purposes we will update the character in the database after every move
+
+	serviceEndpoint := fmt.Sprintf("localhost:%d", servicePort)
+
+	rc, body, err := client.UpdateCharacter(serviceEndpoint, machineKey, players[req.SessionKey])
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	if rc != 200 {
+
+		fmt.Println("status: ", rc, " body: ", body)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, "OK"
+}
+
+type Disconnect struct {
+	SessionKey string `json:"sessionKey"`
+}
+
+func handleDisconnect(httpReq *http.Request) (int, string) {
+
+	var req Disconnect
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	serviceEndpoint := fmt.Sprintf("localhost:%d", servicePort)
+
+	rc, body, err := client.PlayerDisconnect(serviceEndpoint, machineKey, game.GameId, players[req.SessionKey])
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	if rc != 200 {
+
+		fmt.Println("status: ", rc, " body: ", body)
+		return 500, "Internal Server Error"
+	}
+
 	return 200, "OK"
 }

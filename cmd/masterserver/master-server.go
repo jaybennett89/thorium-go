@@ -39,6 +39,7 @@ func main() {
 	// games
 	m.Post("/games/register_server", handleRegisterServer)
 	m.Post("/games/player_connect", handlePlayerConnect)
+	m.Post("/games/player_disconnect", handlePlayerDisconnect)
 
 	m.Post("/games/server_status", handleGameServerStatus)
 
@@ -305,6 +306,25 @@ func handlePlayerConnect(httpReq *http.Request) (int, string) {
 	}
 
 	return 200, string(bytes)
+}
+
+func handlePlayerDisconnect(httpReq *http.Request) (int, string) {
+
+	var req request.PlayerDisconnect
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Print("join game req json decoding error %s", httpReq.Body)
+		return 400, "Bad Request"
+	}
+
+	err = thordb.PlayerDisconnect(req.MachineKey, req.GameId, req.Snapshot)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, "OK"
 }
 
 func handleClientJoinQueue(httpReq *http.Request) (int, string) {

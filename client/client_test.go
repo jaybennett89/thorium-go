@@ -355,3 +355,94 @@ func Test4C_ConnectToGame(t *testing.T) {
 
 	fmt.Println("Test 4C: Pass")
 }
+
+type Move struct {
+	SessionKey string        `json:"sessionKey"`
+	MoveDir    model.Vector3 `json:"movedir"`
+}
+
+// Test 5A: Simulate Player Movement
+func Test5A_PlayerMove(t *testing.T) {
+	fmt.Println("Test 5A: Player Move")
+
+	// move in the positive x direction
+	movedir := model.Vector3{1, 0, 0}
+
+	token := Move{
+		SessionKey: sessionKey,
+		MoveDir:    movedir}
+
+	json, err := json.Marshal(&token)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	url := fmt.Sprintf("http://%s:%d/move", gameServerAddress, gameServerPort)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	c := &http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	if resp.StatusCode != 200 {
+
+		log.Print("game server denied request. status ", resp.StatusCode)
+		t.FailNow()
+	}
+
+	fmt.Println("Test 5A: Pass")
+}
+
+type DisconnectToken struct {
+	SessionKey string `json:"sessionKey"`
+}
+
+// Test 5B: Player Disconnect:
+func Test5B_PlayerDisconnect(t *testing.T) {
+	fmt.Println("Test 5B: Player Disconnect")
+
+	token := DisconnectToken{
+		SessionKey: sessionKey}
+
+	json, err := json.Marshal(&token)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	url := fmt.Sprintf("http://%s:%d/disconnect", gameServerAddress, gameServerPort)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json))
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	c := &http.Client{}
+	resp, err := c.Do(req)
+	if err != nil {
+
+		log.Print(err)
+		t.FailNow()
+	}
+
+	if resp.StatusCode != 200 {
+
+		log.Print("game server denied request. status ", resp.StatusCode)
+		t.FailNow()
+	}
+
+	fmt.Println("Test 5B: Pass")
+}

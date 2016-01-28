@@ -83,6 +83,8 @@ func main() {
 	// called by local gameservers
 	m.Post("/games/register_server", handleRegisterLocalServer)
 	m.Post("/games/player_connect", handlePlayerConnect)
+	m.Post("/games/player_disconnect", handlePlayerDisconnect)
+	m.Post("/characters", handleUpdateCharacter)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGINT)
@@ -200,6 +202,64 @@ func handlePlayerConnect(httpReq *http.Request) (int, string) {
 	}
 
 	rc, body, err := client.PlayerConnect(masterEndpoint, data.GameId, data.MachineKey, data.SessionKey, data.CharacterId)
+
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return rc, body
+}
+
+func handlePlayerDisconnect(httpReq *http.Request) (int, string) {
+
+	var data request.PlayerDisconnect
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&data)
+	if err != nil {
+
+		fmt.Println(err)
+		return 400, "Bad Request"
+	}
+
+	if data.MachineKey != registerData.MachineKey {
+
+		log.Print("WARNING: Received invalid machine key during player connect")
+		log.Printf("have %s recv %s", registerData.MachineKey, data.MachineKey)
+		return 403, "Invalid Key"
+	}
+
+	rc, body, err := client.PlayerDisconnect(masterEndpoint, data.MachineKey, data.GameId, data.Snapshot)
+
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return rc, body
+}
+
+func handleUpdateCharacter(httpReq *http.Request) (int, string) {
+
+	var data request.UpdateCharacter
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&data)
+	if err != nil {
+
+		fmt.Println(err)
+		return 400, "Bad Request"
+	}
+
+	if data.MachineKey != registerData.MachineKey {
+
+		log.Print("WARNING: Received invalid machine key during update character")
+		log.Printf("have %s recv %s", registerData.MachineKey, data.MachineKey)
+		return 403, "Invalid Key"
+	}
+
+	rc, body, err := client.UpdateCharacter(masterEndpoint, data.MachineKey, data.Snapshot)
 
 	if err != nil {
 

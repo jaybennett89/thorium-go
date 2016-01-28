@@ -736,6 +736,45 @@ func PlayerConnect(gameId int, machineKey string, sessionKey string, characterId
 	return &character, nil
 }
 
+func PlayerDisconnect(machineKey string, gameId int, character *model.Character) error {
+
+	_, valid, err := validateMachineKey(machineKey)
+	if err != nil {
+
+		return err
+	}
+
+	if !valid {
+
+		return ErrInvalidMachineKey
+	}
+
+	// todo: use gameId and machineId to validate that player exists in game
+	// this will require a new "players" table that links to hosts table
+	// and reworking the player_count into a count(*) of players table
+
+	json, err := json.Marshal(&character.CharacterState)
+	if err != nil {
+
+		return err
+	}
+
+	_, err = db.Exec("UPDATE characters SET last_game_id = $1, game_data = $2 WHERE id = $3", character.LastGameId, string(json), character.CharacterId)
+	if err != nil {
+
+		return err
+	}
+
+	// increment playercount
+	_, err = db.Exec("UPDATE games SET player_count = player_count - 1 WHERE game_id = $1", gameId)
+	if err != nil {
+
+		return err
+	}
+
+	return nil
+}
+
 func GetCharacter(machineKey string, characterId int) (*model.Character, error) {
 
 	machineId, err := readMachineKey(machineKey)
@@ -778,21 +817,15 @@ func GetCharacter(machineKey string, characterId int) (*model.Character, error) 
 
 func UpdateCharacter(machineKey string, character *model.Character) error {
 
-	machineId, err := readMachineKey(machineKey)
+	_, valid, err := validateMachineKey(machineKey)
 	if err != nil {
 
 		return err
 	}
 
-	var realMachineKey string
-	err = db.QueryRow("SELECT machine_key FROM machines WHERE machine_id = $1", machineId).Scan(&realMachineKey)
-	if err != nil {
-		return err
-	}
+	if !valid {
 
-	if machineKey != realMachineKey {
-
-		return errors.New("invalid machine key")
+		return ErrInvalidMachineKey
 	}
 
 	json, err := json.Marshal(&character.CharacterState)
