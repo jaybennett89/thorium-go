@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var masterEndpoint = "thorium-sky.net:6960"
+var masterEndpoint = "localhost:6960"
 var sessionKey string
 var characterIds []int
 var gameList []model.Game
