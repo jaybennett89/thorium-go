@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/requests"
 )
 
 import "bytes"

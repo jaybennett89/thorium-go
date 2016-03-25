@@ -4,7 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/rsa"
 	"encoding/json"
-	"hussain/thorium-go/requests"
+	"hussain/github.com/jaybennett89/thorium-go/requests"
 	"net/http"
 	"time"
 

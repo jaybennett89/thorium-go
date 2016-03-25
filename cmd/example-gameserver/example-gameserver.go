@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"thorium-go/client"
-	"thorium-go/model"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/client"
+	"github.com/jaybennett89/thorium-go/model"
+	"github.com/jaybennett89/thorium-go/requests"
 	"time"
 
 	"github.com/go-martini/martini"

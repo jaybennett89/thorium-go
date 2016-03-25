@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"code.google.com/p/intmath/intgr"
+	"github.com/jaybennett89/intmath/intgr"
 )
 
 type Position2D struct {

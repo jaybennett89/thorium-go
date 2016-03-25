@@ -11,8 +11,8 @@ import (
 )
 import "github.com/go-martini/martini"
 import (
-	"thorium-go/database"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/database"
+	"github.com/jaybennett89/thorium-go/requests"
 )
 
 func main() {

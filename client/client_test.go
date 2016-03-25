@@ -8,8 +8,8 @@ import (
 	"math/rand"
 	"net/http"
 	"testing"
-	"thorium-go/model"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/model"
+	"github.com/jaybennett89/thorium-go/requests"
 	"time"
 )
 

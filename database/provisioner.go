@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/requests"
 )
 
 func ProvisionNewGame(game_id int, map_name string, game_mode string) error {

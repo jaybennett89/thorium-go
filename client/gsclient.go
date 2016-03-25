@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"thorium-go/model"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/model"
+	"github.com/jaybennett89/thorium-go/requests"
 )
 
 // this package contains game server requests

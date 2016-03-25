@@ -12,13 +12,13 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"thorium-go/client"
-	"thorium-go/globals"
-	"thorium-go/model"
+	"github.com/jaybennett89/thorium-go/client"
+	"github.com/jaybennett89/thorium-go/globals"
+	"github.com/jaybennett89/thorium-go/model"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/go-redis/redis"
+	"gopkg.in/redis.v3"
 	_ "github.com/lib/pq"
 )
 

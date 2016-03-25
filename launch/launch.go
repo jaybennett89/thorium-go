@@ -3,8 +3,8 @@ package launch
 import (
 	"log"
 	"strconv"
-	"thorium-go/cmd/host-server/hostconf"
-	"thorium-go/model"
+	"github.com/jaybennett89/thorium-go/cmd/host-server/hostconf"
+	"github.com/jaybennett89/thorium-go/model"
 )
 import "os"
 import "os/exec"

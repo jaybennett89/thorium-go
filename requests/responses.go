@@ -1,6 +1,6 @@
 package request
 
-import "thorium-go/model"
+import "github.com/jaybennett89/thorium-go/model"
 
 type LoginResponse struct {
 	SessionKey   string `json:"sessionKey"`

@@ -12,10 +12,10 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	"thorium-go/client"
-	"thorium-go/launch"
-	"thorium-go/requests"
-	"thorium-go/usage"
+	"github.com/jaybennett89/thorium-go/client"
+	"github.com/jaybennett89/thorium-go/launch"
+	"github.com/jaybennett89/thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/usage"
 	"time"
 )
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	_ "thorium-go/generate"
+	_ "github.com/jaybennett89/thorium-go/generate"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package thordb
 
 import (
-	"thorium-go/generate"
+	"github.com/jaybennett89/thorium-go/generate"
 	"time"
 )
 

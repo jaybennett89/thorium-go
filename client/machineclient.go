@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"thorium-go/requests"
+	"github.com/jaybennett89/thorium-go/requests"
 )
 
 func NewGameServer(endpoint string, gameId int, mapName string, mode string, minLevel int, maxPlayers int) (int, string, error) {
