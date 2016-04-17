@@ -334,7 +334,7 @@ func shutdown() {
 	}
 
 	var req *http.Request
-	req, err = http.NewRequest("POST", fmt.Sprintf("http://52.25.124.72:6960/machines/%d/disconnect", registerData.MachineId), bytes.NewBuffer(jsonBytes))
+	req, err = http.NewRequest("POST", fmt.Sprintf("http://%s/machines/%d/disconnect", masterEndpoint, registerData.MachineId), bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		return
 	}

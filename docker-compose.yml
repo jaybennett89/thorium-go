@@ -6,18 +6,17 @@ cache:
 db:
   image: library/postgres
   volumes:
-   - ./../../sql:/docker-entrypoint-initdb.d
+   - ./sql:/docker-entrypoint-initdb.d
   environment:
    - POSTGRES_PASSWORD=secret
 
 master-server:
-    build: .
+    build: ./cmd/masterserver
     ports:
      - "6960:6960"
     volumes:
-     - ./../..:/usr/src/app
+     - .:/usr/src/app
     links:
         - cache
         - db
-
 
