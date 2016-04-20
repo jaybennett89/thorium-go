@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -157,18 +156,19 @@ func handleClientRegister(httpReq *http.Request) (int, string) {
 
 func handleClientDisconnect(httpReq *http.Request) (int, string) {
 
-	// getting session key might become more complicated later (add a request struct)
-	bytes, err := ioutil.ReadAll(httpReq.Body)
+	var req request.Disconnect
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
 	if err != nil {
+		fmt.Println("error decoding client disconnect request")
 		return 400, "Bad Request"
 	}
 
-	accountSession := string(bytes)
-	err = thordb.Disconnect(accountSession)
+	err = thordb.Disconnect(req.SessionKey)
 	if err != nil {
 		log.Print("thordb couldnt disconnect, something went wrong")
 		log.Print(err)
-		return 400, "Bad Request"
+		return 500, "Internal Server Error"
 	}
 
 	return 200, "OK"

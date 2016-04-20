@@ -70,6 +70,10 @@ type JoinGame struct {
 	SessionKey string `json:"sessionKey"`
 }
 
+type Disconnect struct {
+	SessionKey string `json:"sessionKey"`
+}
+
 type PlayerConnect struct {
 	GameId      int    `json:"gameId"`
 	MachineKey  string `json:"machineKey"`

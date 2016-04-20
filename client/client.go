@@ -118,8 +118,18 @@ func Login(masterEndpoint string, username string, password string) (int, string
 }
 
 func Disconnect(masterEndpoint string, token string) (int, string, error) {
+
+	var disconnectReq request.Disconnect
+	disconnectReq.SessionKey = token
+
+	// marshal request data into json byte array
+	jsonBytes, err := json.Marshal(&disconnectReq)
+	if err != nil {
+		return 0, "", err
+	}
+
 	url := fmt.Sprintf("http://%s/clients/disconnect", masterEndpoint)
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(token)))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBytes))
 	if err != nil {
 		log.Print("error with request: ", err)
 		return 0, "", err
