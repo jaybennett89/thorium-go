@@ -100,7 +100,7 @@ func position(index int) (int, int) {
 	}
 }
 
-func test() {
+func CoordTest() {
 
 	loop_size := 500000
 	step_size := 1
