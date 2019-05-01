@@ -2,13 +2,16 @@
 
 cache:
   image: redis
-
+  ports:
+   - "6379:6379"
 db:
   image: library/postgres
   volumes:
    - ./sql:/docker-entrypoint-initdb.d
   environment:
    - POSTGRES_PASSWORD=secret
+  ports:
+   - "5432:5432"
 
 host-server:
   image: thorium/host-server:latest

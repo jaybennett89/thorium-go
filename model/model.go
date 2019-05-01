@@ -86,12 +86,12 @@ func (c *Character) SetClassAttributes(classId int) {
 
 	c.ClassId = classId
 	c.BaseMeshId = 1
-	c.Alive = true
+	c.Alive = false
 	c.BaseMovespeed = 8
 	c.Level = 1
 	c.XP = 0
-	c.Health.Max = 100
-	c.Health.Current = 100
+	c.Health.Max = 300
+	c.Health.Current = 300
 	c.Health.RegenRate = 10
 	c.Energy.Max = 100
 	c.Energy.Current = 100
@@ -100,7 +100,8 @@ func (c *Character) SetClassAttributes(classId int) {
 	c.Power.Max = 100
 	c.Power.RegenRate = 30
 	c.Armor = 0
-	c.Weapons = append(c.Weapons, 1)
-	c.SelectedWeapon = 0
+	c.Weapons = append(c.Weapons, 0)
+	c.Weapons = append(c.Weapons, 100)
+	c.SelectedWeapon = 1
 	c.Stunned = false
 }
