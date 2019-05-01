@@ -10,6 +10,13 @@ db:
   environment:
    - POSTGRES_PASSWORD=secret
 
+host-server:
+  image: thorium/host-server:latest
+  ports:
+   - "10000-60000"
+  volumes:
+   - /opt/thorium/gameserver:/opt/thorium/gameserver
+
 master-server:
     build: ./cmd/masterserver
     ports:
