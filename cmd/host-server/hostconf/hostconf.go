@@ -15,8 +15,7 @@ var config HostConfiguration
 var lastConfigMod time.Time
 
 func init() {
-
-	file, err := os.Open("host.config")
+	file, err := os.Open("config/host.config")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +26,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	info, err := os.Stat("host.config")
+	info, err := os.Stat("config/host.config")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,7 +42,7 @@ func GameserverBinaryPath() string {
 
 func checkConfigFile() {
 
-	info, err := os.Stat("host.config")
+	info, err := os.Stat("config/host.config")
 	if err != nil {
 
 		log.Fatal(err)
@@ -53,7 +52,7 @@ func checkConfigFile() {
 
 	if modTime.After(lastConfigMod) {
 
-		file, err := os.Open("host.config")
+		file, err := os.Open("config/host.config")
 		if err != nil {
 
 			log.Fatal(err)
