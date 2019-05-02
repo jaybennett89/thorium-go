@@ -1,27 +1,30 @@
+version: "2"
 
+services:
+  cache:
+    image: redis
+    ports:
+     - "6379:6379"
+  db:
+    image: library/postgres
+    volumes:
+     - ./sql:/docker-entrypoint-initdb.d
+    environment:
+     - POSTGRES_PASSWORD=secret
+    ports:
+     - "5432:5432"
 
-cache:
-  image: redis
-  ports:
-   - "6379:6379"
-db:
-  image: library/postgres
-  volumes:
-   - ./sql:/docker-entrypoint-initdb.d
-  environment:
-   - POSTGRES_PASSWORD=secret
-  ports:
-   - "5432:5432"
+  host-server:
+    image: thorium/host-server
+    ports:
+     - "10000-10050:10000-10050"
+    volumes:
+     - /opt/thorium/gameserver:/opt/thorium/gameserver
+     - ./cmd/host-server/config:/opt/thorium/host-server/config
+    depends_on:
+     - "master-server"
 
-host-server:
-  image: thorium/host-server
-  ports:
-   - "10000-60000"
-  volumes:
-   - /opt/thorium/gameserver:/opt/thorium/gameserver
-   - ./cmd/host-server/config:/opt/thorium/host-server/config
-
-master-server:
+  master-server:
     build: ./cmd/masterserver
     ports:
      - "6960:6960"

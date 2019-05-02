@@ -15,4 +15,6 @@ stop:
 	docker-compose stop || true
 
 rm:
-	docker-compose rm || true
+	docker-compose rm -f || true
+
+restart: stop rm run
