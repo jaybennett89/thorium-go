@@ -33,7 +33,7 @@ func main() {
 
 	timeNow := time.Now()
 	rand.Seed(int64(timeNow.Second()))
-	listenPort = rand.Intn(50000)
+	listenPort = rand.Intn(50)
 	listenPort = listenPort + 10000
 
 	fmt.Println(strconv.Itoa(listenPort), "\n")
