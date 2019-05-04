@@ -2,6 +2,8 @@ from ubuntu
 
 EXPOSE 10000-60000
 
+RUN apt-get update && apt-get install -y iputils-ping netcat dnsutils
+
 RUN mkdir -p /opt/thorium/host-server
 RUN mkdir /opt/thorium/host-server/config
 

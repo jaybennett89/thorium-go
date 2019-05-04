@@ -17,13 +17,11 @@ type GameServerProcess struct {
 }
 
 var list []GameServerProcess = make([]GameServerProcess, 0)
-var baseListenPort int = 12690
+var baseListenPort int = 10100
 
 func NewGameServer(machineKey string, servicePort int, gameId int, mapName string, mode string, minLevel int, maxPlayers int) error {
-
-	log.Printf("Starting new game server (gameId %d, map %s, mode %s, minLevel %d, maxPlayers %d", gameId, mapName, mode, minLevel, maxPlayers)
-
 	listenPort := baseListenPort + len(list)
+	log.Printf("Starting new game server: \nmachineId %d\nservicePort %d\n listenPort %d\n map %s\n mode %s\n minLevel %d\n maxPlayers %d\n", gameId, servicePort, listenPort, mapName, mode, minLevel, maxPlayers)
 
 	cmd := exec.Command(
 		hostconf.GameserverBinaryPath(),

@@ -17,7 +17,8 @@ services:
   host-server:
     image: thorium/host-server
     ports:
-     - "10000-10050:10000-10050"
+     - "10000-10150:10000-10150"
+     - "10100-10150:10100-10150/udp"
     volumes:
      - /opt/thorium/gameserver:/opt/thorium/gameserver
      - ./cmd/host-server/config:/opt/thorium/host-server/config
