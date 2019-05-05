@@ -34,8 +34,7 @@ func main() {
 
 	timeNow := time.Now()
 	rand.Seed(int64(timeNow.Second()))
-	listenPort = rand.Intn(50)
-	listenPort = listenPort + 10000
+	listenPort = 10000
 
 	fmt.Println(strconv.Itoa(listenPort), "\n")
 
@@ -261,7 +260,7 @@ func handleShutdownServer(httpReq *http.Request) (int, string) {
 		return 403, "Invalid Key"
 	}
 
-	rc, body, err := client.ShutdownServer(masterEndpoint, data.MachineKey, data.GameId, data.Snapshot)
+	rc, body, err := client.ShutdownServer(masterEndpoint, data.MachineKey, data.GameId)
 
 	if err != nil {
 
