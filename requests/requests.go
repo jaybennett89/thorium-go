@@ -86,3 +86,8 @@ type PlayerDisconnect struct {
 	MachineKey string           `json:"machineKey"`
 	Snapshot   *model.Character `json:"snapshot"`
 }
+
+type ShutdownServer struct {
+	GameId     int    `json:"gameId"`
+	MachineKey string `json:"machineKey"`
+}

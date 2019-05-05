@@ -10,8 +10,8 @@ import (
 )
 import "github.com/go-martini/martini"
 import (
-	"github.com/jaybennett89/thorium-go/database"
-	"github.com/jaybennett89/thorium-go/requests"
+	thordb "github.com/jaybennett89/thorium-go/database"
+	request "github.com/jaybennett89/thorium-go/requests"
 )
 
 func main() {
@@ -39,6 +39,7 @@ func main() {
 	m.Post("/games/register_server", handleRegisterServer)
 	m.Post("/games/player_connect", handlePlayerConnect)
 	m.Post("/games/player_disconnect", handlePlayerDisconnect)
+	m.Post("/games/shutdown_server", handleShutdownServer)
 
 	m.Post("/games/server_status", handleGameServerStatus)
 
@@ -319,6 +320,25 @@ func handlePlayerDisconnect(httpReq *http.Request) (int, string) {
 	}
 
 	err = thordb.PlayerDisconnect(req.MachineKey, req.GameId, req.Snapshot)
+	if err != nil {
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return 200, "OK"
+}
+
+func handleShutdownServer(httpReq *http.Request) (int, string) {
+
+	var req request.ShutdownServer
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&req)
+	if err != nil {
+		log.Print("shutdown server req json decoding error %s", httpReq.Body)
+		return 400, "Bad Request"
+	}
+
+	err = thordb.ShutdownServer(req.MachineKey, req.GameId)
 	if err != nil {
 		fmt.Println(err)
 		return 500, "Internal Server Error"

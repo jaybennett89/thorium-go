@@ -12,11 +12,12 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
+
 	"github.com/jaybennett89/thorium-go/client"
 	"github.com/jaybennett89/thorium-go/launch"
-	"github.com/jaybennett89/thorium-go/requests"
+	request "github.com/jaybennett89/thorium-go/requests"
 	"github.com/jaybennett89/thorium-go/usage"
-	"time"
 )
 
 import _ "github.com/lib/pq"
@@ -84,6 +85,7 @@ func main() {
 	m.Post("/games/register_server", handleRegisterLocalServer)
 	m.Post("/games/player_connect", handlePlayerConnect)
 	m.Post("/games/player_disconnect", handlePlayerDisconnect)
+	m.Post("/games/shutdown_server", handleShutdownServer)
 	m.Post("/characters", handleUpdateCharacter)
 
 	c := make(chan os.Signal, 1)
@@ -231,6 +233,35 @@ func handlePlayerDisconnect(httpReq *http.Request) (int, string) {
 	}
 
 	rc, body, err := client.PlayerDisconnect(masterEndpoint, data.MachineKey, data.GameId, data.Snapshot)
+
+	if err != nil {
+
+		fmt.Println(err)
+		return 500, "Internal Server Error"
+	}
+
+	return rc, body
+}
+
+func handleShutdownServer(httpReq *http.Request) (int, string) {
+
+	var data request.ShutdownServer
+	decoder := json.NewDecoder(httpReq.Body)
+	err := decoder.Decode(&data)
+	if err != nil {
+
+		fmt.Println(err)
+		return 400, "Bad Request"
+	}
+
+	if data.MachineKey != registerData.MachineKey {
+
+		log.Print("WARNING: Received invalid machine key during player connect")
+		log.Printf("have %s recv %s", registerData.MachineKey, data.MachineKey)
+		return 403, "Invalid Key"
+	}
+
+	rc, body, err := client.ShutdownServer(masterEndpoint, data.MachineKey, data.GameId, data.Snapshot)
 
 	if err != nil {
 

@@ -12,14 +12,15 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"time"
+
 	"github.com/jaybennett89/thorium-go/client"
 	"github.com/jaybennett89/thorium-go/globals"
 	"github.com/jaybennett89/thorium-go/model"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"gopkg.in/redis.v3"
 	_ "github.com/lib/pq"
+	"gopkg.in/redis.v3"
 )
 
 const privKeyPath string = "keys/app.rsa"
@@ -769,6 +770,43 @@ func PlayerDisconnect(machineKey string, gameId int, character *model.Character)
 	_, err = db.Exec("UPDATE games SET player_count = player_count - 1 WHERE game_id = $1", gameId)
 	if err != nil {
 
+		return err
+	}
+
+	return nil
+}
+
+func ShutdownServer(machineKey string, gameId int) error {
+
+	_, valid, err := validateMachineKey(machineKey)
+	if err != nil {
+
+		return err
+	}
+
+	if !valid {
+		return ErrInvalidMachineKey
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM hosts where game_id= $1", gameId)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("DELETE FROM games where game_id= $1", gameId)
+	if err != nil {
+		if err = tx.Rollback(); err != nil {
+			return err
+		}
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
 		return err
 	}
 
